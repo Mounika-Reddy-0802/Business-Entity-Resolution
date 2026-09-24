@@ -2,12 +2,13 @@
 
     python -m src.matching.decide test [--log <tag> "<change>"]
 """
+import json
 import sys
 
 import pandas as pd
 
 from ..common.evaluate import blocking_recall, log_run, macro_f05, per_group_f05
-from ..common.io_utils import DATA, OUTPUT, load_sources, pairs_to_map, write_id_list_tsv
+from ..common.io_utils import DATA, OUTPUT, ROOT, load_sources, pairs_to_map, write_id_list_tsv
 from ..common.split import ground_truth_for, load_split
 
 THRESHOLD = 0.5
@@ -47,4 +48,5 @@ if __name__ == "__main__":
     write_test()
     if "--log" in sys.argv:
         i = sys.argv.index("--log")
-        print(log_run(sys.argv[i + 1], sys.argv[i + 2], metrics))
+        train = json.loads((ROOT / "models" / "train_metrics.json").read_text())
+        print(log_run(sys.argv[i + 1], sys.argv[i + 2], {**metrics, "train": train}))

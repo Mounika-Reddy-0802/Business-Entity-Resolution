@@ -1,0 +1,36 @@
+{
+  "time": "2026-09-25 01:18",
+  "tag": "lgbm_features",
+  "change": "71 features incl. competition, lgbm 5-fold groupkfold, t=0.5",
+  "who": "krishna-2-005",
+  "commit": "50b2c6c+",
+  "synthetic_data": true,
+  "f05": 0.9875779386914256,
+  "f05_India": 0.9851783008658009,
+  "f05_US": 0.9899775765170501,
+  "block_recall": 0.9992223950233281,
+  "cands_per_s1": 39.977,
+  "train": {
+    "oof_auc": 0.9999653738866002,
+    "rounds": 187,
+    "n_features": 71,
+    "train_pairs": 319966,
+    "train_pos": 10259,
+    "full": false,
+    "params": {
+      "objective": "binary",
+      "learning_rate": 0.05,
+      "num_leaves": 63,
+      "min_child_samples": 20,
+      "feature_fraction": 0.8,
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "lambda_l2": 1.0,
+      "scale_pos_weight": 1.0,
+      "seed": 42,
+      "deterministic": true,
+      "verbose": -1,
+      "num_threads": 0
+    }
+  }
+}

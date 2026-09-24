@@ -15,3 +15,9 @@ Add an entry the moment you lose time to something: symptom, cause, fix, what it
   says so; the pipeline is built so the real files drop into `data/raw/dataset/` and
   `utils/` and `bash scripts/run_pipeline.sh` reruns end to end.
 - Cost: all tuned values (thresholds, caps, hyperparameters) must be re-tuned on the real data.
+
+## 2026-09-25 01:24 IST — rapidfuzz 3.9.6 segfaults in multithreaded cpdist on Windows
+- Symptom: `process.cpdist(..., workers=-1)` on ~200k pairs crashes with an access violation;
+  `workers=1` works.
+- Fix: pin rapidfuzz 3.14.1, which runs the same call multithreaded without crashing.
+- Cost: 5 minutes.
