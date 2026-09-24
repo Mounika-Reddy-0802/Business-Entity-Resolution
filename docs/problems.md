@@ -27,3 +27,10 @@ Add an entry the moment you lose time to something: symptom, cause, fix, what it
   sentence-transformers after pandas/pyarrow; `import pyarrow; import torch` reproduces it.
 - Fix: the embeddings stage imports torch before anything else when run as a module.
 - Cost: 5 minutes.
+
+## 2026-09-25 02:58 IST — run_pipeline.sh broke on a Python path with spaces
+- Symptom: clean-clone run with `PYTHON=".../Business Entity Resolution/.venv/Scripts/python.exe"`
+  stopped at the first stage (`/c/Users/HP/Downloads/Business: No such file or directory`).
+- Fix: quote `"$PY"` on every call. The clean clone then reproduced val F0.5 0.9842 and
+  byte-identical `output/*.tsv`.
+- Cost: 5 minutes.
