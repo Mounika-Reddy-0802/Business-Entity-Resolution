@@ -50,6 +50,7 @@ Every number is a row in `benchmarks/experiments.md` with its json in `benchmark
 | K1–K6 blocking, 71 features, LightGBM, t=0.5 | 0.997 | 40 | 0.9791 |
 | + tuned threshold 0.40 and one-to-one assignment | 0.997 | 40 | 0.9799 |
 | + drop `is_s3` after cross-country check | 0.997 | 40 | 0.9809 |
-| + stage-2 model on stage-1 score context (current) | 0.997 | 40 | **0.9838** |
+| + stage-2 model on stage-1 score context | 0.997 | 40 | 0.9838 |
+| + learning rate 0.02 (best of 14 one-change variants, current) | 0.997 | 40 | **0.9842** |
 
 Cross-country (train one country, score the other): India→US 0.9735, US→India 0.9663.

@@ -20,3 +20,18 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | 01:44 | lahari-66 | 3d59196+ | stage-2 lgbm on stage-1 score context (rank, margin, other-s1 best) (synthetic) | 0.9969 | 39.9855 | 0.9838 | 0.9861 | 0.9815 |  | no |  |
 | 02:11 | Mounika-Reddy-0802 | 955df2a+ | tried: minilm embeddings as k7 top-20 + 3 cosine features (not kept) (synthetic) | 0.9965 | 40.0000 | 0.9811 | 0.9840 | 0.9781 |  | no |  |
 | 02:14 | Mounika-Reddy-0802 | 955df2a+ | tried: minilm cosine features without k7 (not kept) (synthetic) | 0.9969 | 39.9855 | 0.9813 | 0.9859 | 0.9767 |  | no |  |
+| 02:25 | Mounika-Reddy-0802 | 6086b5d+ | tried: num_leaves=15 (synthetic) | 0.9969 | 39.9855 | 0.9807 | 0.9829 | 0.9786 |  | no |  |
+| 02:26 | Mounika-Reddy-0802 | 6086b5d+ | tried: num_leaves=31 (synthetic) | 0.9969 | 39.9855 | 0.9819 | 0.9828 | 0.9811 |  | no |  |
+| 02:28 | Mounika-Reddy-0802 | 6086b5d+ | tried: num_leaves=127 (synthetic) | 0.9969 | 39.9855 | 0.9815 | 0.9833 | 0.9796 |  | no |  |
+| 02:29 | Mounika-Reddy-0802 | 6086b5d+ | tried: min_child_samples=5 (synthetic) | 0.9969 | 39.9855 | 0.9815 | 0.9830 | 0.9800 |  | no |  |
+| 02:31 | Mounika-Reddy-0802 | 6086b5d+ | tried: min_child_samples=50 (synthetic) | 0.9969 | 39.9855 | 0.9819 | 0.9840 | 0.9798 |  | no |  |
+| 02:33 | Mounika-Reddy-0802 | 6086b5d+ | tried: min_child_samples=200 (synthetic) | 0.9969 | 39.9855 | 0.9793 | 0.9816 | 0.9771 |  | no |  |
+| 02:34 | Mounika-Reddy-0802 | 6086b5d+ | tried: scale_pos_weight=0.5 (synthetic) | 0.9969 | 39.9855 | 0.9831 | 0.9855 | 0.9807 |  | no |  |
+| 02:36 | Mounika-Reddy-0802 | 6086b5d+ | tried: scale_pos_weight=2.0 (synthetic) | 0.9969 | 39.9855 | 0.9830 | 0.9865 | 0.9795 |  | no |  |
+| 02:38 | Mounika-Reddy-0802 | 6086b5d+ | tried: learning_rate=0.02 (synthetic) | 0.9969 | 39.9855 | 0.9842 | 0.9869 | 0.9814 |  | no |  |
+| 02:40 | Mounika-Reddy-0802 | 6086b5d+ | tried: learning_rate=0.1 (synthetic) | 0.9969 | 39.9855 | 0.9796 | 0.9791 | 0.9800 |  | no |  |
+| 02:42 | Mounika-Reddy-0802 | 6086b5d+ | tried: feature_fraction=0.5 (synthetic) | 0.9969 | 39.9855 | 0.9815 | 0.9833 | 0.9796 |  | no |  |
+| 02:43 | Mounika-Reddy-0802 | 6086b5d+ | tried: feature_fraction=1.0 (synthetic) | 0.9969 | 39.9855 | 0.9802 | 0.9825 | 0.9778 |  | no |  |
+| 02:45 | Mounika-Reddy-0802 | 6086b5d+ | tried: lambda_l2=0.0 (synthetic) | 0.9969 | 39.9855 | 0.9829 | 0.9862 | 0.9796 |  | no |  |
+| 02:47 | Mounika-Reddy-0802 | 6086b5d+ | tried: lambda_l2=10.0 (synthetic) | 0.9969 | 39.9855 | 0.9816 | 0.9846 | 0.9787 |  | no |  |
+| 02:52 | Mounika-Reddy-0802 | 6086b5d+ | learning rate 0.05 -> 0.02 (best of 14 one-change variants) (synthetic) | 0.9969 | 39.9855 | 0.9842 | 0.9869 | 0.9814 |  | no |  |

@@ -1,0 +1,49 @@
+{
+  "time": "2026-09-25 02:29",
+  "tag": "tune",
+  "change": "tried: min_child_samples=5",
+  "who": "Mounika-Reddy-0802",
+  "commit": "6086b5d+",
+  "synthetic_data": true,
+  "f05": 0.9814822877715682,
+  "f05_US": 0.9829786255411256,
+  "f05_India": 0.9799859500020103,
+  "f05_singleton": 0.9919484702093397,
+  "f05_matched": 0.9767690903140945,
+  "block_recall": 0.9968664316490403,
+  "cands_per_s1": 39.9855,
+  "train": {
+    "oof_auc": 0.9998155831767593,
+    "oof_auc_stage1": 0.9997972348714048,
+    "rounds": 150,
+    "n_features": 80,
+    "train_pairs": 319971,
+    "train_pos": 10195,
+    "full": false,
+    "stage2": true,
+    "params": {
+      "objective": "binary",
+      "learning_rate": 0.05,
+      "num_leaves": 63,
+      "min_child_samples": 5,
+      "feature_fraction": 0.8,
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "lambda_l2": 1.0,
+      "scale_pos_weight": 1.0,
+      "seed": 42,
+      "deterministic": true,
+      "verbose": -1,
+      "num_threads": 0
+    }
+  },
+  "decision": {
+    "t_s2": 0.5,
+    "t_s3": 0.5,
+    "alpha": 0.0,
+    "one_to_one": true,
+    "cap_s2": 0,
+    "cap_s3": 0,
+    "t_single": 0.0
+  }
+}

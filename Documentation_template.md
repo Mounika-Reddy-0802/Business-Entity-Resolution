@@ -71,7 +71,7 @@ Feature groups (`src/matching/features.py`):
   and the best score the candidate reaches with any other S1 entity, with the margin and rank.
 - Key flags from blocking.
 
-Model (`src/matching/train_lgbm.py`): LightGBM binary classifier (learning rate 0.05, 63 leaves,
+Model (`src/matching/train_lgbm.py`): LightGBM binary classifier (learning rate 0.02, 63 leaves,
 feature and bagging fraction 0.8, seed 42, deterministic), early stopping inside 5-fold
 GroupKFold by S1 entity, final model with 1.1x the mean best round. Stage 2 repeats this with
 nine extra features from stage-1 OOF scores (rank, gap and margin within the S1 entity, sum of
@@ -83,7 +83,7 @@ check below).
 Tuned on fit-side OOF scores for macro F0.5, in this order, and kept only if validation F0.5 rises:
 global threshold, per-source thresholds, relative rule `p >= alpha * p_best`, one-to-one
 assignment of each S2/S3 record to its best S1 entity, per-source cardinality caps from the
-training distribution, singleton guard. Current config: per-source thresholds S2 0.45 / S3 0.35,
+training distribution, singleton guard. Current config: per-source thresholds S2 0.40 / S3 0.45,
 other rules off (stage 2 already learns one-to-one from the context features).
 
 ## 5. Transfer to an unseen country
@@ -106,6 +106,7 @@ France included (`src/matching/sanity.py`).
 | + stage-2 context model | 0.9838 |
 | multilingual MiniLM embeddings, K7 + cosines (not kept) | 0.9811 |
 | embedding cosines only (not kept) | 0.9813 |
+| learning rate 0.02, best of 14 one-change LightGBM variants | 0.9842 |
 
 Full log with commits: `benchmarks/experiments.md`.
 
