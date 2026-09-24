@@ -8,6 +8,7 @@ elif [ -x .venv/Scripts/python.exe ]; then PY=.venv/Scripts/python.exe
 else PY="${PYTHON:-python3}"; fi
 $PY -m src.common.split
 $PY -m src.blocking.normalise train test
+$PY -m src.neural.embeddings train test
 $PY -m src.blocking.block train test
 $PY -m src.matching.features train test
 $PY -m src.matching.train_lgbm

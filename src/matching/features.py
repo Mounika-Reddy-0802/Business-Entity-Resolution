@@ -161,6 +161,9 @@ def build(split):
         df[k] = cands[k].astype(np.float32).to_numpy()
     df["name_char_cos"] = cands["ngram_name_cos"].to_numpy()
     df["addr_char_cos"] = cands["ngram_addr_cos"].to_numpy()
+    for c in ("emb_name_cos", "emb_addr_cos", "emb_cos"):
+        if c in cands:
+            df[c] = cands[c].to_numpy()
 
     nc1, nc2 = A.name_core.tolist(), B.name_core.tolist()
     df["name_jw"] = sim(nc1, nc2, JaroWinkler.normalized_similarity)
@@ -215,7 +218,8 @@ def build(split):
     df["is_s3"] = cands.cand_id.str.startswith("S3-").astype(np.float32).to_numpy()
 
     df["pair_score"] = (df.name_char_cos + df.addr_char_cos).astype(np.float32)
-    df = competition(df, ["name_char_cos", "addr_char_cos", "pair_score", "name_token_set"])
+    df = competition(df, ["name_char_cos", "addr_char_cos", "pair_score", "name_token_set"]
+                     + (["emb_cos"] if "emb_cos" in df else []))
 
     if split == "train":
         df["side"] = df.s1_id.map(side_of(set(df.s1_id)))

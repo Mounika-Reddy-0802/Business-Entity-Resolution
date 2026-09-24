@@ -21,3 +21,9 @@ Add an entry the moment you lose time to something: symptom, cause, fix, what it
   `workers=1` works.
 - Fix: pin rapidfuzz 3.14.1, which runs the same call multithreaded without crashing.
 - Cost: 5 minutes.
+
+## 2026-09-25 02:08 IST — torch DLL init fails when pyarrow is loaded first (Windows)
+- Symptom: `OSError: [WinError 1114] ... c10.dll` when `src.neural.embeddings` imports
+  sentence-transformers after pandas/pyarrow; `import pyarrow; import torch` reproduces it.
+- Fix: the embeddings stage imports torch before anything else when run as a module.
+- Cost: 5 minutes.

@@ -1,4 +1,4 @@
-"""Candidate generation: union of blocking keys K1..K6 (PLAN.md §2.2) -> data/candidates/.
+"""Candidate generation: union of blocking keys K1..K7 (PLAN.md §2.2) -> data/candidates/.
 
 Every key requires equal country. In the train split, blocking runs separately on the fit side and
 on the validation side so validation sees only its own records, exactly like test.
@@ -16,13 +16,15 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from ..common.evaluate import blocking_recall, log_run
 from ..common.io_utils import DATA, pairs_to_map
 from ..common.split import ground_truth_for, side_of
+from ..neural import embeddings
 from .normalise import STOP, load_normalised
 
 TOPK = 20                 # K6 neighbours per S1 record, per field
 MAX_BLOCK = 200           # key values with more S2/S3 records than this are too generic to use
 CAP = 40                  # final candidates per S1 entity (see cap_rank)
+EMB_BLOCKING = False      # K7 embedding neighbours as candidates (cosines are features either way)
 CHUNK_CELLS = 2e7         # dense cells per chunk of the sparse similarity product
-KEYS = ["k1", "k2", "k3", "k4", "k5", "k6"]
+KEYS = ["k1", "k2", "k3", "k4", "k5", "k6", "k7"]
 
 
 def key_values(df):
@@ -99,6 +101,26 @@ def topk_pairs(A, B, ids_a, ids_b, k=TOPK):
     return pd.DataFrame({"s1_id": np.concatenate(out_a), "cand_id": np.concatenate(out_b)})
 
 
+def dense_topk_pairs(A, B, ids_a, ids_b, k=TOPK):
+    """Top-k inner-product neighbours for dense L2-normalised rows, in chunks."""
+    rows = max(1, int(CHUNK_CELLS // max(B.shape[0], 1)))
+    k = min(k, B.shape[0])
+    out_a, out_b = [], []
+    for start in range(0, A.shape[0], rows):
+        sim = A[start:start + rows] @ B.T
+        idx = np.argpartition(-sim, k - 1, axis=1)[:, :k]
+        r = np.repeat(np.arange(sim.shape[0]), k)
+        out_a.append(ids_a[start + r])
+        out_b.append(ids_b[idx.ravel()])
+    return pd.DataFrame({"s1_id": np.concatenate(out_a), "cand_id": np.concatenate(out_b)})
+
+
+def unit_rows(M):
+    """Rows scaled to unit length (zero rows stay zero)."""
+    n = np.linalg.norm(M, axis=1, keepdims=True)
+    return M / np.where(n > 0, n, 1.0)
+
+
 def rowwise_cos(A, B, ia, ib):
     """Cosine of A[ia[i]] and B[ib[i]] for every i, both matrices L2-normalised."""
     out = np.empty(len(ia), dtype=np.float32)
@@ -108,8 +130,9 @@ def rowwise_cos(A, B, ia, ib):
     return out
 
 
-def block_partition(s1, other):
-    """All keys for one (partition, country) group; returns pairs with key flags and cosines."""
+def block_partition(s1, other, emb=None):
+    """All keys for one (partition, country) group; returns pairs with key flags and cosines.
+    emb: (name1, addr1, name2, addr2) embedding matrices aligned with s1 and other, or None."""
     if s1.empty or other.empty:
         return pd.DataFrame(columns=["s1_id", "cand_id", *KEYS, "ngram_name_cos", "ngram_addr_cos"])
     exact = exact_key_pairs(s1, other)
@@ -118,7 +141,14 @@ def block_partition(s1, other):
     ids1, ids2 = s1["entity_id"].to_numpy(), other["entity_id"].to_numpy()
     k6 = pd.concat([topk_pairs(An, Bn, ids1, ids2), topk_pairs(Aa, Ba, ids1, ids2)])
     k6["key"] = "k6"
-    allp = pd.concat([exact, k6], ignore_index=True)
+    found = [exact, k6]
+    if emb is not None:
+        n1, a1, n2, a2 = emb
+    if emb is not None and EMB_BLOCKING:
+        k7 = dense_topk_pairs(unit_rows(n1 + a1), unit_rows(n2 + a2), ids1, ids2)
+        k7["key"] = "k7"
+        found.append(k7)
+    allp = pd.concat(found, ignore_index=True)
     flags = pd.crosstab([allp.s1_id, allp.cand_id], allp.key).clip(upper=1).astype(bool)
     flags = flags.reindex(columns=KEYS, fill_value=False).reset_index()
     pos1 = pd.Series(np.arange(len(ids1)), index=ids1)
@@ -126,6 +156,10 @@ def block_partition(s1, other):
     ia, ib = pos1[flags.s1_id].to_numpy(), pos2[flags.cand_id].to_numpy()
     flags["ngram_name_cos"] = rowwise_cos(An, Bn, ia, ib)
     flags["ngram_addr_cos"] = rowwise_cos(Aa, Ba, ia, ib)
+    if emb is not None:
+        flags["emb_name_cos"] = np.einsum("ij,ij->i", n1[ia], n2[ib])
+        flags["emb_addr_cos"] = np.einsum("ij,ij->i", a1[ia], a2[ib])
+        flags["emb_cos"] = np.einsum("ij,ij->i", unit_rows(n1 + a1)[ia], unit_rows(n2 + a2)[ib])
     return flags
 
 
@@ -156,10 +190,17 @@ def block(split, cap=CAP):
         other = other.assign(part=other.entity_id.map(side))
     else:
         s1, other = s1.assign(part="all"), other.assign(part="all")
+    emb = embeddings.load(split)
+    row = pd.Series(np.arange(len(emb["ids"])), index=emb["ids"]) if emb is not None else None
     parts = []
     for (part, country), g1 in s1.groupby(["part", "country"], sort=True):
-        g2 = other[(other.part == part) & (other.country == country)]
-        parts.append(block_partition(g1.reset_index(drop=True), g2.reset_index(drop=True)))
+        g2 = other[(other.part == part) & (other.country == country)].reset_index(drop=True)
+        g1 = g1.reset_index(drop=True)
+        e = None
+        if emb is not None:
+            r1, r2 = row[g1.entity_id].to_numpy(), row[g2.entity_id].to_numpy()
+            e = (emb["name"][r1], emb["addr"][r1], emb["name"][r2], emb["addr"][r2])
+        parts.append(block_partition(g1, g2, e))
     full = pd.concat(parts, ignore_index=True)
     capped = apply_cap(full, cap)
     out = DATA / "candidates"
