@@ -12,6 +12,7 @@ $PY -m src.blocking.block train test
 $PY -m src.matching.features train test
 $PY -m src.matching.train_lgbm
 $PY -m src.matching.train_lgbm --predict
+$PY -m src.matching.decide sweep
 $PY -m src.matching.decide test
 if [ -f utils/validate_submission.py ]; then
   $PY utils/validate_submission.py --matching output/matching_results.tsv \

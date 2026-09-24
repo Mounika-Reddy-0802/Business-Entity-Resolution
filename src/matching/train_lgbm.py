@@ -5,8 +5,6 @@
 
 Default: trains on the fit side of the training split, so the validation side stays unseen.
 --full: trains on the whole training split (final submission); OOF then covers every train pair.
-Hyperparameters live in models/lgbm_params.json when present (written by tuning runs), otherwise
-PARAMS below.
 """
 import json
 import sys
@@ -24,25 +22,20 @@ PARAMS = {"objective": "binary", "learning_rate": 0.05, "num_leaves": 63, "min_c
           "feature_fraction": 0.8, "bagging_fraction": 0.8, "bagging_freq": 1, "lambda_l2": 1.0,
           "scale_pos_weight": 1.0, "seed": 42, "deterministic": True, "verbose": -1,
           "num_threads": 0}
+# removed after the cross-country check (benchmarks/experiments.md): dropping lifted both directions
+DROPPED = ["is_s3"]
 MAX_ROUNDS = 2000
 FOLDS = 5
 MODELS = ROOT / "models"
 SCORES = DATA / "scores"
 
 
-def params():
-    path = MODELS / "lgbm_params.json"
-    return {**PARAMS, **json.loads(path.read_text())} if path.exists() else dict(PARAMS)
+def params(**overrides):
+    return {**PARAMS, **overrides}
 
 
 def feature_cols(df, drop=()):
     return [c for c in df.columns if c not in META and c not in drop]
-
-
-def dropped_features():
-    """Features removed by the cross-country check (models/dropped_features.json)."""
-    path = MODELS / "dropped_features.json"
-    return json.loads(path.read_text()) if path.exists() else []
 
 
 def train_rows(full):
@@ -64,11 +57,11 @@ def cross_validate(df, cols, prm):
     return oof, rounds
 
 
-def fit(full=False):
-    """CV, OOF scores, final model, importance; returns a metrics dict."""
+def fit(full=False, **overrides):
+    """CV, OOF scores, final model, importance; returns a metrics dict. overrides: LightGBM params."""
     df = train_rows(full)
-    cols = feature_cols(df, dropped_features())
-    prm = params()
+    cols = feature_cols(df, DROPPED)
+    prm = params(**overrides)
     oof, rounds = cross_validate(df, cols, prm)
     SCORES.mkdir(parents=True, exist_ok=True)
     df[["s1_id", "cand_id"]].assign(p=oof, label=df.label).to_parquet(SCORES / "train_oof.parquet", index=False)

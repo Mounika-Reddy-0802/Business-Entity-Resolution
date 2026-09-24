@@ -1,0 +1,51 @@
+{
+  "time": "2026-09-25 01:26",
+  "tag": "cross_country",
+  "change": "train one country, score the other; feature-group ablation",
+  "who": "lahari-66",
+  "commit": "a3a3373+",
+  "synthetic_data": true,
+  "India->India": 0.9813728278300647,
+  "India->US": 0.9735099761349761,
+  "US->India": 0.9663223227795598,
+  "US->US": 0.9834823787323788,
+  "cross_country": 0.9663223227795598,
+  "ablation": {
+    "key_flags": {
+      "India->US": 0.9755757575757577,
+      "US->India": 0.9640373569284172
+    },
+    "name_strings": {
+      "India->US": 0.9761315836940837,
+      "US->India": 0.9654797960956282
+    },
+    "suffix": {
+      "India->US": 0.9662478354978355,
+      "US->India": 0.9734462250211089
+    },
+    "addr_strings": {
+      "India->US": 0.9757079725829726,
+      "US->India": 0.9673805970216575
+    },
+    "numbers_postal": {
+      "India->US": 0.9730338203463204,
+      "US->India": 0.9572556900658681
+    },
+    "city": {
+      "India->US": 0.9762357156732158,
+      "US->India": 0.9664973136383741
+    },
+    "cross_field": {
+      "India->US": 0.9777619664692033,
+      "US->India": 0.9664494815529299
+    },
+    "competition": {
+      "India->US": 0.9650477569815805,
+      "US->India": 0.9642206181116785
+    },
+    "source": {
+      "India->US": 0.9764160353535354,
+      "US->India": 0.9693296549082154
+    }
+  }
+}
