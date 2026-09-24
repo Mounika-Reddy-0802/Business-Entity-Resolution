@@ -12,3 +12,4 @@ One line per decision: time IST, who, what was decided, why.
 - 2026-09-25 01:24 — krishna-2-005 — harder synthetic v2 (20% chain branches in 4 cities, 6% city-only addresses, same-name same-city distractors); rows before this one used v1 and are not comparable.
 - 2026-09-25 01:26 — lahari-66 — decision rules are tuned on fit-side OOF scores and accepted only if validation F0.5 rises, so validation is never used to pick a threshold value directly.
 - 2026-09-25 01:31 — lahari-66 — a feature group is dropped only if removing it lifts both cross-country directions by >= 0.002; only is_s3 qualified (+0.0029/+0.0030), and val F0.5 rose 0.9799 -> 0.9809 without it. Dropped list and params live in code (train_lgbm.py) so a clean clone reproduces them.
+- 2026-09-25 01:40 — lahari-66 — one-typo legal-suffix detection reverted: val 0.9809 -> 0.9801 on synthetic (singletons +0.003, matched -0.003); re-test on the organiser data where suffix typos may be more common.

@@ -1,0 +1,47 @@
+{
+  "time": "2026-09-25 01:35",
+  "tag": "fuzzy_suffix",
+  "change": "tried: one-typo legal suffix detection (reverted, below 0.9809)",
+  "who": "lahari-66",
+  "commit": "57859f0+",
+  "synthetic_data": true,
+  "f05": 0.9801207850994039,
+  "f05_US": 0.9803176961926962,
+  "f05_India": 0.9799238740061106,
+  "f05_singleton": 0.9935587761674718,
+  "f05_matched": 0.9740693039875327,
+  "block_recall": 0.9968664316490403,
+  "cands_per_s1": 39.9855,
+  "train": {
+    "oof_auc": 0.9998306487821856,
+    "rounds": 185,
+    "n_features": 70,
+    "train_pairs": 319973,
+    "train_pos": 10196,
+    "full": false,
+    "params": {
+      "objective": "binary",
+      "learning_rate": 0.05,
+      "num_leaves": 63,
+      "min_child_samples": 20,
+      "feature_fraction": 0.8,
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "lambda_l2": 1.0,
+      "scale_pos_weight": 1.0,
+      "seed": 42,
+      "deterministic": true,
+      "verbose": -1,
+      "num_threads": 0
+    }
+  },
+  "decision": {
+    "t_s2": 0.5,
+    "t_s3": 0.5,
+    "alpha": 0.0,
+    "one_to_one": true,
+    "cap_s2": 0,
+    "cap_s3": 0,
+    "t_single": 0.0
+  }
+}

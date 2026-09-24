@@ -1,0 +1,97 @@
+s1_id	entity_f05	kind	stage	cand_id	p	n_true	country	s1_name	cand_name	s1_addr	cand_addr
+S1-000062	0.0	miss	model	S2-006990	0.0336	1	US	Elecric Baekr, Co.	Baker Electric	2033 Park Road, Denver, CO 80297	Denver, CO
+S1-000271	0.0	miss	model	S2-000263	0.4835	1	US	Johnson Insurance	Johnson Insurance Agency	7618 Oak Drive, Denver, CO 80206	Denver, CO
+S1-000898	0.0	miss	model	S2-001936	0.2452	1	India	Mahalakshmi Enterprises Pvt Ltd	Das & Automobiles Verma	29-223, 1st Floor, Banjara Hills, Near Big Bazaar, Hyderabad, Telangana 500070	29-223, 1ST FLOOR, BANJARA HILLS, HYDERABAD, TELANGANA 500070
+S1-001091	0.0	false_merge		S2-004670	0.9834	0	US	Young & Scott Printing Corp	Young & Scott Printing	306 Sunset Street, Phoenix, AZ 85082	Phoenix, AZ
+S1-001105	0.0	miss	blocking	S2-002646		1	India	Gupta & Jain Tours and Travels LLP	Gupta & L.L.P.	Mumbai, Maharashtra	805, Kamla nagar, Mmubai, Maharashtra - 400099
+S1-002170	0.0	miss	model	S2-000722	0.3777	1	US	Davis Grill LLC	Allen Florist	10 Washington Boulevard, Chicago, IL 60618	10 Washington Blvd, Chicago, IL
+S1-002199	0.0	false_merge		S2-010628	0.7341	0	India	SAI KRISHNA BOOK DEPOT LLP	Sai Book Krishna Depot	323, 1st Floor, Nehru Colony, Near Govt Hospital, Mumbai, Maharashtra 400079	No. 372, 1st Floor, Kamla Nagar, Mumbai, Maharashtra 400079
+S1-002206	0.0	miss	model	S2-006214	0.003	1	India	Annapurna Bakery	Patel Agencies	Jubilee Hills, Bombay - 400040, 525, Near Railway Station	525, 1st Floor, Jubilee Hills, Mumbai, Maharashtra
+S1-002612	0.0	miss	model	S2-006899	0.0126	1	US	CF Centter L.L.C.	Cartetr Fitness Center L.L.C.	727 Sunset Lane, Columbus, OH 43222	Columbus, OH
+S1-002617	0.0	miss	model	S3-004276	0.3365	1	India	Tirumala Electronics	Iyer and Das Steels	670, Rajaji Nagar, Near HDFC Bank, Mumbai, Maharashtra - 400084	670, Rajaji Nagar, Opposite HDFC Bank, Mumbai 400084
+S1-003418	0.0	miss	model	S3-004031	0.3665	1	India	Singh Agencies Pvt Ltd	VINAYAKA OPTICALS	266, Anna Nagar, Near Govt Hospital, Bengaluru, Karnataka 560013	SHOP NO 266, ANNA NAGAR, BESIDE GOVT HOSPITAL, BENGALURU, KARNATAKA 560013
+S1-003652	0.0	miss	model	S2-009229	0.2458	1	US	Johnson Insurance Agency Ltd	Adams & Carter Bakery	5824 Main Lane, Denver, CO 80247	5824 Main Ln, Denver, CO 80247
+S1-004234	0.0	miss	model	S2-008800	0.161	1	US	Garcia Hardware LLC	Northstar Grill	8354 Chrch Blvd, Atlanta, GA 30326	8354 CHURCH BLVD, ATLANTA, GA
+S1-004341	0.0	false_merge		S2-007464	0.4772	0	India	Ganesh Agencies Pvt Ltd	Ganesh Agencies Private Limited	453, Kamla Nagar, Near Post Office, Bengaluru, Karnataka 560070	Kolkata, West Bengal
+S1-004357	0.0	miss	model	S3-006671	0.0001	1	India	Vijaya Hardwares Pvt Ltd	SINGH STEELS	3-36, Ground Floor, Gandhi Nagar, Near SBI ATM, Pune, Maharashtra 411053	Pune, Maharashtra
+S1-004767	0.0	miss	model	S2-001808	0.0059	1	India	Jain & Nair Mobile Shop LLP	Jain Nair & Mobile Shop L..P.	35-56, 1st Floor, Ashok Nagar, Hyderabad - 500068	Hyderabad, Telangana
+S1-006946	0.0	false_merge		S3-007126	0.8409	0	India	Tirumala Opticals & Co	Opticals Tirumala and Company	15-152, Koramangala, Near Clock Tower, Vijayawada, Andhra Pradesh - 520033	Vijayawada, Andhra Pradesh
+S1-007893	0.0	miss	model	S2-004509	0.1765	1	US	Pizz aAcme, Corp.	Acme Pizza Coipr	4965 Cedar Lane, Tampa, FL 33690	Cedar Ln, Tampa, FL
+S1-007911	0.0	miss	model	S3-003905	0.0362	1	India	Mahalakshmi Kirana Store Ltd	Ganga Mobile Sohop	H.No 32-27, MG Rd, Andhira Pradesh - 520069, Bezawada	32-27, 1ST FLOOR, MG RD, BESIDE GOVT HOSPITAL, BEZAWADA
+S1-008390	0.0	false_merge		S2-003740	0.746	0	US	Lakeside Car Wash Corporatoin	CARE WSD LIMITED	1087 Oak Street, Austin, TX	1087 Oak St, Austin, TX
+S1-008578	0.0	false_merge		S2-004956	0.8163	0	India	Reddy Automobiles Ltd	Maruti Mobile Shop	736, Indira Nagr, Chennai, Tamil Nadu 600016	736, INDIRA AGAR, BESIDE HANUMAN TEMPLE, CHENNAI, TAMIL NADU 600016
+S1-008622	0.0	miss	blocking	S2-001030		1	India	Ganesh Tiffin Centre & Co	Ganhs Tiffin Centre & Co	Bengaluru, Karnataka	15-17, Main Bazaar, Bangalore, Karnataka 560018
+S1-008970	0.0	miss	model	S2-006547	0.371	1	US	Martinez & Wilson Realty Co	Martinez & Co	5106 Franklin Street, Seattle, WA 98129	Seattle, WA
+S1-009092	0.0	miss	model	S3-004305	0.2218	1	US	Martinez Car Wash Corp	MARTINEZ CAR WASH	3750 Church Boulevard, Austin, TX 78768	Austin, TX
+S1-009263	0.0	miss	blocking	S3-003786		1	US	Baker Rooifng Icn	Bakenr Roofing Inc	2300 Church Street, Raleigh, NC 27621	Church Street, Raliegh, NC
+S1-009502	0.0	miss	model	S3-003691	0.0439	1	US	Martinez Car Wash	Car Matrinez	8519 Church Street, Seattle, WA 98157	Seattle, WA
+S1-009661	0.0	miss	model	S3-003654	0.0367	1	US	Beacon Law Group Co	Davis & Scott Dental Care	5695 Oak Rd, Stee 516, Portland, OR	5695 Oak Rd, Portland, OR 97242
+S1-000756	0.385	false_merge		S2-001084	0.6302	1	US	Scott & Thompson Tax Services	Frontier Fitness Center L.L.C.	8939 Pine Boulevard, Suite 284, Austin, TX 78777	8939 Pine Boulevard, Austin, TX 78777
+S1-000756	0.385	false_merge		S2-005037	0.9019	1	US	Scott & Thompson Tax Services	Scott and Thompson Tax Services	8939 Pine Boulevard, Suite 284, Austin, TX 78777	Austin, TX
+S1-001481	0.556	false_merge		S2-002017	0.7594	1	India	Kumar Jewellers LLP	Ganesh Agencies	19-281, Ground Floor, MG Road, Near Govt Hospital, Delhi, Delhi 110097	No. 19-281, MG Road, Delhi 110097
+S1-004826	0.556	false_merge		S2-006256	0.9765	1	India	Sai Krishna Bakery Pvt Ltd	SAI KRISHNA BAKERY PVT LTD	144, Ground Floor, Nehru Colony, Near HDFC Bank, Mumbai, Maharashtra 400008	Mumbai, Maharashtra
+S1-005339	0.556	false_merge		S2-000451	0.712	1	US	Nelson Roofing Inc	Roofing Nelson	4525 Madison Boulevard, Seattle, WA 98133	Seattle, WA
+S1-006148	0.556	false_merge		S3-004069	0.7951	1	US	Summit Roofing LLC	Coastal Landscaping	2350 Park Street, Portland, OR 97226	2350 Park Stret, Portland
+S1-007530	0.556	false_merge		S3-005633	0.7027	1	US	Scott Grill Ltd	Carter Gril lLLC	Lincoln Blvd, Atlanta, GA 30359	5157 Main Blvd, Atlanta, GA 30359
+S1-008502	0.556	false_merge		S2-004586	0.6697	1	India	Gupta & Jain Tours and Travels	Ganga Hospital Ltd	849, 2nd Floor, Indira Nagar, Near Bus Stand, Chennai, Tamil Nadu - 600019	849, 2nd Floor, Indira Nagar, Beside Bus Stand, Chennai, Tamil Nadu 600019
+S1-008889	0.556	false_merge		S2-009034	0.816	1	India	Agarwal Medical Stores	Reddy & Sharma Enterprises	24-232, Ground Floor, Nehru Colony, Near Clock Tower, Chennai, Tamil Nadu 600083	24-232, Ground Floor, Nehru Colony, Beside Clock Tower, Madras 600083
+S1-009299	0.556	false_merge		S3-007212	0.6587	1	India	Nair Electronics	Nair Electronis	975, Ground Floor, MG Road, Near Post Office, Chennai, Tamil Nadu 600071	Chennai, Tamil Nadu
+S1-003844	0.667	false_merge		S2-003959	0.6579	3	India	Tiffin Venkateswara Centre	Venkateswara Tiffin Centre	Near SBI ATM, 2nd Floor, Mumbai - 400031, Shop No 5-110, MG Road	Mumbai, Maharashtra
+S1-003844	0.667	miss	model	S2-010266	0.1891	3	India	Tiffin Venkateswara Centre	Navaratna Agencies	Near SBI ATM, 2nd Floor, Mumbai - 400031, Shop No 5-110, MG Road	5-110, 2ND FLOOR, MG ROAD, MUMAI
+S1-001282	0.714	false_merge		S3-000622	0.7981	2	US	Pioneer Insurance Agency Inc	Redwood Law Group	4340 Hill Road, Chicago, IL 60609	4340 Hill Rad, Chicago, IL 60609
+S1-001505	0.714	false_merge		S2-000263	0.9546	2	US	Johnson Insurance Agency	Johnson Insurance Agency	8596 Hill Road, Suite 182, Denver, CO 80272	Denver, CO
+S1-006395	0.714	false_merge		S3-005427	0.5752	2	US	Baker Pharmacy Ltd	Adams Florist Limited	5499 Church Lane, Denver, CO 80221	5499 Church Lane, Denver, CO 80221
+S1-007779	0.714	false_merge		S3-002391	0.8309	2	India	Sai Krishna Textiles	Hanuman Electronics, LLP.	531, 2nd Floor, MG Road, Near Police Station, Bengaluru, Karnataka - 560079	531, 2nd Floor, MG Road, Nr Police Station, Bengaluru - 560079
+S1-008531	0.714	false_merge		S3-004167	0.5517	2	India	Kaveri Furniture Ltd	Kaveri Furniture	Chennai, Tamil Nadu	Chennai, Tamil Nadu
+S1-007806	0.75	miss	model	S2-003959	0.1285	4	India	Venkatesweara Tiffin Centre	Venkateswara Tiffin Centre	193, Anna Nagr, Mumbai, Maharashtra 400056	Mumbai, Maharashtra
+S1-007806	0.75	false_merge		S3-007549	0.5102	4	India	Venkatesweara Tiffin Centre	Kirana Tirumala Store Ltd	193, Anna Nagr, Mumbai, Maharashtra 400056	193, 2nd Floor, Anna Nagar, Bombay, Maharashtra 400056
+S1-009681	0.789	false_merge		S3-002442	0.927	3	India	Vijaya Kirana Store	Bose osital	No. 34-148, Jubilee Hills, Hyderabad, Telangana - 500022	34-148, Jubilee Hills, Near Railway Station, Hyderabad - 500022
+S1-000721	0.833	miss	model	S2-007143	0.036	2	US	Hernandez & Adams Pizza Inc	HERNANDEZ & INC	Portland, OR	1819 Lincooln Blvd, Ste 475, OR 97279
+S1-001090	0.833	miss	model	S2-000713	0.2785	2	US	Grainte Pharmacy	Graniter Pharmacy Inc	5090 Madison Lane, Tampa, FL 33602	Tampa, FL
+S1-001293	0.833	miss	model	S3-007466	0.0459	2	US	Garcia & Smith Tax Services Co	Garcia & Smith Tax Services	109 Chruch Boulevard, Austin, TX	Church Blvd, Austin, 78714
+S1-002186	0.833	miss	model	S2-007503	0.1575	2	US	Prairie Hardware LLC	Family Millre Medicine	#5674 Snuset Street, Seattle	5674 Sunset St, Suite 614, Seattle, WA
+S1-002276	0.833	miss	model	S2-005350	0.0974	2	India	Singh & Reddy Electronics LLP	VINAYAKA BOOK DEPOT	838, Banjaar Hills, Near Govt Hospital, Jaipur - 302024	838, 1st Floor, Banjara Hills, Nr Govt Hospital, Jaipur
+S1-002563	0.833	miss	model	S2-008760	0.0012	2	US	Coastal Roofing Inc	CONSULTING TD	9140 Pine Road, Boston, MA	Pine Rd, Boston, MA 02165
+S1-003338	0.833	miss	blocking	S2-006674		4	India	Iyer Medicael Stores and Company	IM Stores and Company	Kolkata, West Bengal	564, MG Road, Near Police Station, Kolkata - 700016
+S1-003338	0.833	miss	model	S3-000229	0.0002	4	India	Iyer Medicael Stores and Company	IYER MEDICAL STORES & CO	Kolkata, West Bengal	H.No 564, MG Road, Calutta 700016
+S1-004389	0.833	miss	model	S2-001316	0.0002	2	US	Johnson & Smith Fitness Center	Center JSF	6409 Jackson Street, Suite 281, Seattle, WA 98161	Seattle, WA
+S1-005919	0.833	miss	model	S2-008219	0.0738	2	US	Nelson Florist Inc	Nelson Florist	Park Blvd, 85023	4769 Park Blvd, Phoenix, ZA
+S1-006925	0.833	miss	blocking	S2-006719		2	US	Smith Dental Care Ltd	SD CARE LTD	Phoenix, AZ	#9570 Park Lane, Phoenix, AZ 85026
+S1-007369	0.833	miss	blocking	S2-007295		2	India	Jain & Reddy Tours and Travels LLP	Mrauti Jewellers	Kamla Nagar, Mumbai, 1st Floor, #269, Maharashtra, Nr Clock Tower	Mumbai, Maharashtra
+S1-007401	0.833	miss	model	S2-004301	0.105	2	US	Johnson & Company	JOHNSON & ALLEN PLUMBING COMPAYN	3956 Lincoln Street, Phoenix, AZ 85083	Phoenix, AZ
+S1-009285	0.833	miss	blocking	S3-003331		2	US	Harbor Consulting LLC	Harobr Consulting L.L.C.	3558 Lake Avenue, Phoenix, AZ 85041	Lake Avenue, AZ
+S1-009432	0.833	miss	model	S3-007045	0.0001	2	India	Agencies Vijaya	Blaai Automobiles	12-146, MG Road, Near SBI ATM, Delhi, Delhi 110009	Delhi, Delhi
+S1-001810	0.882	miss	blocking	S2-006107		5	India	Nair & Verma Textiles Pvt Ltd	NAIR AND PRIVATE LITIED	Hyderabad, Telangana	27-39, LAXMI NAGAR, HYDERABAD
+S1-001810	0.882	miss	model	S3-003556	0.3525	5	India	Nair & Verma Textiles Pvt Ltd	Nair & Verma Txtiles	Hyderabad, Telangana	Hyderabad, Telangana
+S1-000114	0.909	miss	model	S2-006724	0.016	3	India	Maruti Furniture	Ganesh Electronics	433, Anna Ngr, Opp Railway Station, Bengaluru	433, Bengaluru, Karnataka 560077, Anna Nagar
+S1-000273	0.909	miss	model	S3-002782	0.0724	3	India	Shree Ram Traders LLP	Shree Traders Ram	376, Station Road, Near Police Station, Chennai, Tamil Nadu - 600018	Chennai, Tamil Nadu
+S1-001255	0.909	miss	model	S3-002998	0.1203	3	US	Lakeside Florist, Corp.	Smith Consulting	4303 Madison Drive, Austin, TX 78764	4303 Madison oDrive, Austin, TX
+S1-001485	0.909	miss	model	S3-001403	0.3331	3	India	Vijaya Opticals & Co	Automobiles Naidu	20-30, MG Road, Near Railway Station, Vijayawada, Andhra Pradesh - 520034	20-30, MG Rd, Near Railway Station, Vijayawada, Andhra Pradesh 520034
+S1-001509	0.909	miss	model	S2-006416	0.1402	3	India	Ganesh Mobile Shop & Co	Das Electronics	10-51, 1st Floor, Anna Nagar, Near Clock Tower, Chennai, Tamil Nadu - 600006	10-51, Anna Nagar, Nr Clock Tower, Madras, Tamil Nadu 600006
+S1-001966	0.909	miss	model	S3-005390	0.3584	3	US	King & Martinez Coffee House LLC	Harbor Floirst	9504 Pine Dr, Sreattle	9504 Pine Dr, Seattle, WA 98194
+S1-002294	0.909	miss	model	S2-004627	0.0088	3	India	Stseels Maruti vt Ltd	Maruti Steels Private Limited	21-234, Ground Floor, Anna Nagar, Near Govt Hospital, Bengaluru, Karnataka 560028	Bengaluru, Karnataka
+S1-003600	0.909	miss	model	S2-002556	0.0148	3	India	Durga Hospital & Co	Hospital Durga	#21-267, Kamla Nagar, Opp Clock Tower, Mumbai, Maharashtra	Mumbai, Maharashtra
+S1-003944	0.909	miss	model	S3-002607	0.0136	3	US	Heritage Pizza	Green & Walker Insurance Agency	7141 Washington Drive, Phoenix, AZ 85051	Washington Dr, Phoenix, AZ
+S1-005861	0.909	miss	model	S2-000172	0.3426	3	US	Keystone Car Wash Ltd	Keystne aCr	3341 Oak Rd, Suite 791, nAustin, TX 78716	Oak Rd, Austin, TX
+S1-006307	0.909	miss	model	S3-006768	0.0003	3	US	Lakeside Car Wash Ltd	Maple Leaf Pizza	2752 Pine Ave, Austin, TX	Pine Av,e Austin, TX 78720
+S1-007361	0.909	miss	model	S3-004167	0.0921	3	India	Kaveri Furniture	Kaveri Furniture	785, 1st Floor, Gandhi Ngr, Chennai - 600023	Chennai, Tamil Nadu
+S1-007852	0.909	miss	model	S2-009307	0.2694	3	US	Thompson Law Group Ltd	Allen Pharmacy	1904 Lincoln Ln, Austin, 78777	1904 Linoln Lane, TX
+S1-008762	0.909	miss	model	S2-008522	0.0002	3	India	Venkateswara Tiffin Cnetre Pvt Ltd	VT Centre Pvt Ltd	40-299, 1st Floor, Ashok Nagar, Near Hanuman Temple, Bengaluru, Karnataka - 560075	Bengaluru, Karnataka
+S1-009490	0.909	miss	model	S3-007509	0.2156	3	US	Magnolia Plumbing Corp	Pionee rFamily Mnedicine	6935 Lincoln rD, Austin, 78756	Lincoln Dr, Austin, TX 78756
+S1-009791	0.909	miss	model	S2-003128	0.3604	3	India	Kumar & Das Enterprises	Ganesh Jewellers	19-267, 2ND FLOOR, STATION RD, NR RAILWAY STATION, BEZAWADA 520058	19-267, 2nd Floor, Station d, Vijayawada
+S1-009952	0.909	miss	model	S3-006993	0.0868	3	India	Kumar & Gupta Book Depot LLP	Kumar & LLP	705, Anna Nagar, Chnnai, Tamil Nadu - 600066	Chennai, Tamil Nadu
+S1-000961	0.938	miss	model	S3-004334	0.3816	4	India	Verma Mobile Shop	Verma Mobile	15-16, Gandhi nagar, Hyderabad	Hyderabad, Telangana
+S1-002513	0.938	miss	model	S3-001396	0.0155	4	US	CASCADE PLUMBING CORP	Cascade Plumbing Corp	Portland, OR	407 Hill Blvd, Suite 156
+S1-003412	0.938	miss	model	S3-007510	0.2256	4	India	Ganga Hardwares & Co	Ganga Hardwares	661, 1st Floor, Anna Nagar, Near HDFC Bank, Hyderabad, Telangana 500068	Hyderabad, Telangana
+S1-003771	0.938	miss	model	S2-000822	0.2125	4	India	Mautri Bakery and Company	FURNITURE NAVARATNA	35-79, Groound Floor, Nehru Colony, Nr Govt Hospital, Kolkata, West Bengal 700006	35-79, Nehr uColony, Calcutta 700006
+S1-004552	0.938	miss	model	S2-002779	0.2225	4	India	Sharma & Book Iyer Depot	GANESH SWEETS	20-234, 2nd Floor, Station Road, Near HDFC Bank, Delhi, Delhi 110024	Shop No 20-234, Station Road, Delhi, Delhi
+S1-005751	0.938	miss	model	S3-006668	0.3473	4	US	Hernandez Auto Repair Ltd	Hernandez Repair Auto Ld	7739 Franklin Drive, Raleigh, NC 27656	Raleigh, NC
+S1-006560	0.938	miss	model	S3-000606	0.1635	4	India	Patel & Verma Tours and Travels	Sri Lakshmi Tiffin Centre	25-192, Ground Floor, Anna Nagar, Near Railway Station, Mumbai, Maharashtra 400088	Maharashtra - 400088, 25-192, Baombay, Anna Nagar
+S1-006951	0.938	miss	model	S2-006248	0.3535	4	India	Maruti Jewellers & Co	Nair and Kumar Book Depot	449, 1st Floor, Shivaji Nagar, Near Police Station, Mumbai, Maharashtra - 400007	449, Shivaji nagar, Bombay
+S1-008097	0.938	miss	model	S3-007595	0.1203	4	US	Clark & Wilson Law Group, Inc.	CWL Group Incorporated	8816 Pine R,d Ste 317	8816 Pine Rd, Austin, TX 78727
+S1-008409	0.938	miss	model	S2-000241	0.0	4	India	Hanuman Furniture LLP	Sri Lrakshmi Book Depot	2-152, 1st Floor, Shivaji Nagar, Near Hanuman Temple, Chennai, Tamil Nadu 600077	Chennai, Tamil Nadu
+S1-009688	0.938	miss	model	S3-007294	0.1614	4	India	Shree Ram Sweets & Co	Shree Ram, & Co.	18-61, Banjara Hills, Opp Police Station, Hyderabad, Telangana 500051	Hyderabad, Telangana
+S1-000556	0.952	miss	model	S3-006590	0.3384	5	US	Maple Leaf Printing Inc	Maple Leaf	8557 Madison Lane, Nashville, TN 37200	Nashville, TN
+S1-001459	0.952	miss	model	S2-002462	0.2014	5	India	VERMA DEPOT BOOK	Sweets Durga	30-54, 2nd Floor, Laxmi Nagar, Near Big Bazaar, Delhi, Delhi 110055	30-54, Laxmi Ntagar, New Delhi - 110055
+S1-001635	0.952	miss	model	S2-005037	0.8593	5	US	& Scott Thompson Tax Services	Scott and Thompson Tax Services	8337 Main Street, Austin, TX 78701	Austin, TX
+S1-008118	0.952	miss	model	S3-007212	0.4234	5	India	Nair Electronics LLP	Nair Electronis	288, Ground Floor, Koramangala, Near Hanuman Temple, Chennai, Tamil Nadu 600069	Chennai, Tamil Nadu
