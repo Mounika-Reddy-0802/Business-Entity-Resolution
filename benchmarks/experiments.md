@@ -17,3 +17,4 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | 01:26 | lahari-66 | a3a3373+ | train one country, score the other; feature-group ablation (synthetic) |  |  |  |  |  | 0.9663 | no |  |
 | 01:31 | lahari-66 | a3a3373+ | drop is_s3 after cross-country ablation (+0.003 both directions) (synthetic) | 0.9969 | 39.9855 | 0.9809 | 0.9806 | 0.9811 |  | no |  |
 | 01:35 | lahari-66 | 57859f0+ | tried: one-typo legal suffix detection (reverted, below 0.9809) (synthetic) | 0.9969 | 39.9855 | 0.9801 | 0.9803 | 0.9799 |  | no |  |
+| 01:44 | lahari-66 | 3d59196+ | stage-2 lgbm on stage-1 score context (rank, margin, other-s1 best) (synthetic) | 0.9969 | 39.9855 | 0.9838 | 0.9861 | 0.9815 |  | no |  |
