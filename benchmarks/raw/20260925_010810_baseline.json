@@ -1,0 +1,13 @@
+{
+  "time": "2026-09-25 01:08",
+  "tag": "baseline",
+  "change": "naive exact-name blocker, 4 rapidfuzz features, lgbm, t=0.5",
+  "who": "krishna-2-005",
+  "commit": "2285f9a+",
+  "synthetic_data": true,
+  "f05": 0.7230788098747652,
+  "f05_India": 0.7007151757556167,
+  "f05_US": 0.745442443993915,
+  "block_recall": 0.5397390272835113,
+  "cands_per_s1": 1.366
+}

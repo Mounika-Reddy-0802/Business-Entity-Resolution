@@ -50,3 +50,38 @@ def candidate_stats(cand_map, n_s1, n_other):
         "max_per_s1": max(sizes) if sizes else 0,
         "reduction_ratio": 1 - total / (n_s1 * n_other) if n_s1 and n_other else 0.0,
     }
+
+
+def git_commit():
+    """Short HEAD hash; a trailing + marks uncommitted changes under src/ or scripts/."""
+    import subprocess
+    from .io_utils import ROOT
+    run = lambda *a: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    head = run("rev-parse", "--short", "HEAD") or "none"
+    return head + ("+" if run("status", "--porcelain", "--", "src", "scripts") else "")
+
+
+def log_run(tag, change, metrics, member=None):
+    """Write benchmarks/raw/<timestamp>_<tag>.json and append one row to experiments.md.
+    metrics may hold block_recall, cands_per_s1, f05, f05_US, f05_India, cross_country, ..."""
+    import json
+    import subprocess
+    import time
+    from .io_utils import ROOT, data_is_synthetic
+    stamp = time.strftime("%Y%m%d_%H%M%S")
+    who = member or subprocess.run(["git", "config", "user.name"], cwd=ROOT, capture_output=True,
+                                   text=True).stdout.strip()
+    rec = {"time": time.strftime("%Y-%m-%d %H:%M"), "tag": tag, "change": change, "who": who,
+           "commit": git_commit(), "synthetic_data": data_is_synthetic(), **metrics}
+    raw = ROOT / "benchmarks" / "raw"
+    raw.mkdir(parents=True, exist_ok=True)
+    path = raw / f"{stamp}_{tag}.json"
+    path.write_text(json.dumps(rec, indent=2, default=float) + "\n")
+    fmt = lambda k: f"{metrics[k]:.4f}" if isinstance(metrics.get(k), float) else str(metrics.get(k, ""))
+    change_txt = change + (" (synthetic)" if rec["synthetic_data"] else "")
+    row = [time.strftime("%H:%M"), who, rec["commit"], change_txt, fmt("block_recall"),
+           fmt("cands_per_s1"), fmt("f05"), fmt("f05_US"), fmt("f05_India"), fmt("cross_country"),
+           "no", ""]
+    with open(ROOT / "benchmarks" / "experiments.md", "a", encoding="utf-8") as f:
+        f.write("| " + " | ".join(row) + " |\n")
+    return path

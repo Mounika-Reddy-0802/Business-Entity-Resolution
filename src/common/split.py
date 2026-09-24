@@ -71,3 +71,10 @@ def ground_truth_for(side):
 if __name__ == "__main__":
     v1, v2 = make_split()
     print(f"validation: {len(v1)} S1 entities, {len(v2)} S2/S3 records -> {SPLIT_DIR}")
+
+
+def side_of(ids):
+    """{entity id: 'val' or 'fit'} for training-split ids (S1 and S2/S3 alike)."""
+    val_s1, val_other = load_split()
+    val = val_s1 | val_other
+    return {i: ("val" if i in val else "fit") for i in ids}
