@@ -1,0 +1,109 @@
+{
+  "time": "2026-09-25 01:24",
+  "tag": "decision_sweep",
+  "change": "decision rules 1-7 tuned on oof, kept if val f0.5 rises",
+  "who": "lahari-66",
+  "commit": "1dbc715+",
+  "synthetic_data": true,
+  "f05": 0.9798801329819137,
+  "f05_US": 0.9811790778665778,
+  "f05_India": 0.9785811880972483,
+  "f05_singleton": 0.9903381642512077,
+  "f05_matched": 0.9751706062101716,
+  "block_recall": 0.9968664316490403,
+  "cands_per_s1": 39.9855,
+  "decision": {
+    "t_s2": 0.4,
+    "t_s3": 0.4,
+    "alpha": 0.0,
+    "one_to_one": true,
+    "cap_s2": 0,
+    "cap_s3": 0,
+    "t_single": 0.0
+  },
+  "sweep": [
+    {
+      "rule": "t=0.5",
+      "cfg": {
+        "t_s2": 0.5,
+        "t_s3": 0.5,
+        "alpha": 0.0,
+        "one_to_one": false,
+        "cap_s2": 0,
+        "cap_s3": 0,
+        "t_single": 0.0
+      },
+      "oof": 0.9615067364133779,
+      "val": 0.9790658608569792
+    },
+    {
+      "rule": "1 global threshold",
+      "tuned": {
+        "t_s2": 0.4,
+        "t_s3": 0.4
+      },
+      "oof": 0.9620502793326416,
+      "val_before": 0.9790658608569792,
+      "val_after": 0.9794907480612782,
+      "delta": 0.00042488720429900706,
+      "kept": true
+    },
+    {
+      "rule": "2 per-source thresholds",
+      "tuned": {
+        "t_s2": 0.4,
+        "t_s3": 0.625
+      },
+      "oof": 0.9627271885751558,
+      "val_before": 0.9794907480612782,
+      "val_after": 0.9786253846665032,
+      "delta": -0.0008653633947750539,
+      "kept": false
+    },
+    {
+      "rule": "3 relative alpha",
+      "tuned": {
+        "alpha": 0.9
+      },
+      "oof": 0.9643931770950928,
+      "val_before": 0.9794907480612782,
+      "val_after": 0.9779265236397588,
+      "delta": -0.001564224421519378,
+      "kept": false
+    },
+    {
+      "rule": "4 one-to-one",
+      "tuned": {
+        "one_to_one": true
+      },
+      "oof": 0.9629340278940217,
+      "val_before": 0.9794907480612782,
+      "val_after": 0.9798801329819132,
+      "delta": 0.0003893849206350053,
+      "kept": true
+    },
+    {
+      "rule": "5 cardinality caps",
+      "tuned": {
+        "cap_s2": 4,
+        "cap_s3": 3
+      },
+      "oof": 0.9627491405600047,
+      "val_before": 0.9798801329819132,
+      "val_after": 0.9797662499286919,
+      "delta": -0.00011388305322135306,
+      "kept": false
+    },
+    {
+      "rule": "6 singleton guard",
+      "tuned": {
+        "t_single": 0.3
+      },
+      "oof": 0.9629340278940217,
+      "val_before": 0.9798801329819132,
+      "val_after": 0.9798801329819132,
+      "delta": 0.0,
+      "kept": false
+    }
+  ]
+}

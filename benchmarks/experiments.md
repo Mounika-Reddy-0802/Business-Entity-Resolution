@@ -13,3 +13,4 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | 01:18 | krishna-2-005 | 50b2c6c+ | 71 features incl. competition, lgbm 5-fold groupkfold, t=0.5 (synthetic) | 0.9992 | 39.9770 | 0.9876 | 0.9900 | 0.9852 |  | no |  |
 | 01:21 | krishna-2-005 | b60a65e+ | same blocking on harder synthetic v2 (chains in same city, city-only addresses) (synthetic) | 0.9969 | 39.9855 |  |  |  |  | no |  |
 | 01:21 | krishna-2-005 | b60a65e+ | 71 features, lgbm, t=0.5 on harder synthetic v2 (synthetic) | 0.9969 | 39.9855 | 0.9791 | 0.9805 | 0.9776 |  | no |  |
+| 01:24 | lahari-66 | 1dbc715+ | decision rules tuned on oof, kept if val rises: t=0.40 +0.0004 kept; per-source -0.0009; alpha 0.9 -0.0016; one-to-one +0.0004 kept; caps 4/3 -0.0001; singleton guard +0.0000 (synthetic) | 0.9969 | 39.9855 | 0.9799 | 0.9812 | 0.9786 |  | no |  |
