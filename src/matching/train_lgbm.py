@@ -16,6 +16,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import GroupKFold
 
 from ..common.io_utils import DATA, ROOT
+from .features import second_largest
 
 META = ["s1_id", "cand_id", "side", "label"]
 PARAMS = {"objective": "binary", "learning_rate": 0.05, "num_leaves": 63, "min_child_samples": 20,
@@ -63,14 +64,13 @@ def score_context(df, p):
     its S1 entity and with the other S1 entities that list the same S2/S3 record."""
     ctx = pd.DataFrame({"s1_id": df.s1_id.values, "cand_id": df.cand_id.values, "p1": p})
     g1, g2 = ctx.groupby("s1_id").p1, ctx.groupby("cand_id").p1
-    second = lambda s: s.nlargest(2).iloc[-1] if len(s) > 1 else 0.0
-    best1, sec1 = g1.transform("max"), g1.transform(second)
-    best2, sec2 = g2.transform("max"), g2.transform(second)
+    best1, sec1 = g1.transform("max"), second_largest(ctx.p1, ctx.s1_id)
+    best2, sec2 = g2.transform("max"), second_largest(ctx.p1, ctx.cand_id)
     other = np.where(ctx.p1 >= best2, sec2, best2)
     return pd.DataFrame({
         "p1": ctx.p1, "p1_rank_s1": g1.rank(ascending=False, method="min"),
         "p1_gap_s1": best1 - ctx.p1, "p1_margin_s1": np.where(ctx.p1 >= best1, ctx.p1 - sec1, ctx.p1 - best1),
-        "p1_sum_s1": g1.transform("sum"), "p1_n_above_half_s1": g1.transform(lambda s: (s >= 0.5).sum()),
+        "p1_sum_s1": g1.transform("sum"), "p1_n_above_half_s1": (ctx.p1 >= 0.5).groupby(ctx.s1_id).transform("sum"),
         "p1_other_s1_best": other, "p1_margin_cand": ctx.p1 - other,
         "p1_rank_cand": g2.rank(ascending=False, method="min"),
     }, index=df.index).astype(np.float32)

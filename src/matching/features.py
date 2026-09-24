@@ -112,6 +112,19 @@ def text_cos(texts1, texts2, i1, i2, **tfidf_args):
     return rowwise_cos(vec.transform(texts1), vec.transform(texts2), i1, i2)
 
 
+def second_largest(values, groups):
+    """Per-row second-largest value of its group (0 for groups of one), without Python loops."""
+    v = np.asarray(values, dtype=np.float64)
+    codes = pd.factorize(np.asarray(groups))[0]
+    order = np.lexsort((-v, codes))
+    sc, sv = codes[order], v[order]
+    start = np.r_[True, sc[1:] != sc[:-1]]
+    first_pos = np.flatnonzero(start)
+    size = np.diff(np.r_[first_pos, len(sv)])
+    second = np.where(size > 1, sv[np.minimum(first_pos + 1, len(sv) - 1)], 0.0)
+    return second[codes]
+
+
 def competition(df, cols):
     """Context features: how a pair compares with the other candidates of its S1 entity and with
     the other S1 entities that list the same S2/S3 record. `cols` are score columns to use."""
@@ -122,10 +135,10 @@ def competition(df, cols):
         best = g1[c].transform("max")
         df[f"{c}_rank_s1"] = g1[c].rank(ascending=False, method="min").astype(np.float32)
         df[f"{c}_gap_s1"] = (best - df[c]).astype(np.float32)
-        second = g1[c].transform(lambda s: s.nlargest(2).iloc[-1] if len(s) > 1 else 0.0)
+        second = second_largest(df[c], df.s1_id)
         df[f"{c}_margin_s1"] = np.where(df[c] >= best, df[c] - second, df[c] - best).astype(np.float32)
         top1 = g2[c].transform("max")
-        top2 = g2[c].transform(lambda s: s.nlargest(2).iloc[-1] if len(s) > 1 else 0.0)
+        top2 = second_largest(df[c], df.cand_id)
         other_best = np.where(df[c] >= top1, top2, top1)
         df[f"{c}_other_s1_best"] = other_best.astype(np.float32)
         df[f"{c}_margin_cand"] = (df[c] - other_best).astype(np.float32)
