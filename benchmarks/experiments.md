@@ -9,3 +9,4 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | time (IST) | who | commit | change | block recall | cands/S1 | val F0.5 | val F0.5 US | val F0.5 IN | cross-country F0.5 | uploaded? | LB |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | 01:08 | krishna-2-005 | 2285f9a+ | naive exact-name blocker, 4 rapidfuzz features, lgbm, t=0.5 (synthetic) | 0.5397 | 1.3660 | 0.7231 | 0.7454 | 0.7007 |  | no |  |
+| 01:13 | krishna-2-005 | c776e2f+ | normalise views + keys k1-k6, cap 40 by best per-field cosine rank (synthetic) | 0.9992 | 39.9770 |  |  |  |  | no |  |

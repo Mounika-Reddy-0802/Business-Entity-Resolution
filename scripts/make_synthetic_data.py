@@ -157,6 +157,8 @@ class Gen:
         words = core.split()
         if noise and rng.random() < 0.15 and len(words) > 2:
             words = words[:2]                              # trade / DBA name
+        if noise and rng.random() < 0.05 and len(words) > 2:
+            words = ["".join(w[0] for w in words[:-1] if w[0].isalpha()).upper(), words[-1]]  # initials
         if noise and rng.random() < 0.12 and len(words) > 1:
             i = rng.randrange(len(words) - 1)
             words[i], words[i + 1] = words[i + 1], words[i]  # word transposition
@@ -173,6 +175,8 @@ class Gen:
                 name = f"{name}, {short}."
         if noise and rng.random() < 0.2:
             name = typo(name, rng)
+            if rng.random() < 0.35:
+                name = typo(name, rng)
         if noise and rng.random() < 0.15:
             name = name.upper()
         if noise and rng.random() < 0.3:
@@ -188,7 +192,7 @@ class Gen:
         drop = lambda p: noise and rng.random() < p
         if country == "US":
             city, state, _ = a["city"]
-            num = a["num"] if not drop(0.05) else ""
+            num = a["num"] if not drop(0.08) else ""
             if noise and rng.random() < 0.1:
                 num = f"#{num}" if num else num
             parts = [f"{num} {a['street']} {ab(a['stype'])}".strip()]
@@ -197,7 +201,7 @@ class Gen:
             if not drop(0.1):
                 parts.append(city)
             tail = state if not drop(0.15) else ""
-            if not drop(0.25):
+            if not drop(0.35):
                 tail = f"{tail} {a['zip']}".strip()
             if tail:
                 parts.append(tail)
@@ -274,7 +278,12 @@ def build_split(prefix, countries, n_s1, seed, id_start):
         s1.append({"entity_id": sid, "business_name": g.render_name(e, rng.random() < 0.3),
                    "business_address": g.render_addr(e, rng.random() < 0.3), "country": e["country"]})
         k = rng.choices([0, 1, 2, 3, 4, 5], weights=[32, 34, 18, 9, 5, 2])[0]
-        matches = [add("S2" if rng.random() < 0.6 else "S3", e) for _ in range(k)]
+        matches = []
+        for _ in range(k):
+            m = e
+            if rng.random() < 0.04:                               # trade name unrelated to S1 name
+                m = dict(e, core=g.entity(e["country"])["core"], suffix=("", ""))
+            matches.append(add("S2" if rng.random() < 0.6 else "S3", m))
         gt.append({"source1_entity_id": sid, "matches": matches})
         if rng.random() < 0.08:                                   # same name, other city
             twin = g.entity(e["country"], brand_name=e["core"])
