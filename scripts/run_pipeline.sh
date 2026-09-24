@@ -7,6 +7,7 @@ cd "$(dirname "$0")/.."
 if [ -x .venv/bin/python ]; then PY=.venv/bin/python
 elif [ -x .venv/Scripts/python.exe ]; then PY=.venv/Scripts/python.exe
 else PY="${PYTHON:-python3}"; fi
+"$PY" -m src.common.check_inputs
 "$PY" -m src.common.split
 "$PY" -m src.blocking.normalise train test
 "$PY" -m src.neural.embeddings train test

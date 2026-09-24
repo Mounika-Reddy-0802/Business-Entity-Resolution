@@ -29,3 +29,12 @@ def test_address_views_abbreviations_postal_and_city_alias():
 def test_unseen_country_uses_generic_map():
     clean, _, postal, _, _ = addr_views("12 av. Victor Hugo, 75011 Paris", "Neverland")
     assert clean == "12 ave victor hugo 75011 paris" and postal == "75011"
+
+
+def test_loader_keeps_quotes_and_drops_bom(tmp_path):
+    from src.common.io_utils import load_tsv
+    path = tmp_path / "x.tsv"
+    path.write_bytes('﻿entity_id\tbusiness_name\nS1-1\t"Joe\'s" Diner\nS1-2\tAcme "Best\n'.encode("utf-8"))
+    df = load_tsv(path)
+    assert list(df.columns) == ["entity_id", "business_name"]
+    assert df.business_name.tolist() == ['"Joe\'s" Diner', 'Acme "Best']

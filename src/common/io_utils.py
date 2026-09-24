@@ -1,6 +1,7 @@
 """Shared I/O helpers. Every stage reads and writes through these so the three lanes agree on
 paths, column names and TSV handling. Do not change signatures without a team decision
 (docs/decisions.md)."""
+import csv
 from pathlib import Path
 
 import pandas as pd
@@ -19,8 +20,11 @@ def data_is_synthetic():
 
 
 def load_tsv(path):
-    """Tab-separated, everything as string, empty cells stay empty strings (never NaN)."""
-    return pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False)
+    """Tab-separated, everything as string, empty cells stay empty strings (never NaN).
+    Quotes are ordinary characters: the files are unquoted, and a name starting with `"` must keep
+    it. A UTF-8 byte-order mark, if present, is dropped from the first header."""
+    return pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False, quoting=csv.QUOTE_NONE,
+                       encoding="utf-8-sig")
 
 
 def load_sources(split):

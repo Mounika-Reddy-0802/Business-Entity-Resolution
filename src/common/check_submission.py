@@ -15,7 +15,7 @@ from pathlib import Path
 def read_rows(path, id_col):
     """Returns (header, rows) with rows as (s1_id, [ids]); raw strings, no pandas."""
     with open(path, newline="", encoding="utf-8") as f:
-        reader = csv.reader(f, delimiter="\t")
+        reader = csv.reader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
         header = next(reader, [])
         rows = [(r[0] if r else "", [x for x in (r[1].split(",") if len(r) > 1 else []) if x != ""])
                 for r in reader]
@@ -26,8 +26,8 @@ def source_ids(test_dir):
     """{source name: set of entity ids} from the test source files."""
     out = {}
     for s in ("source1", "source2", "source3"):
-        with open(Path(test_dir) / f"test_{s}.tsv", newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f, delimiter="\t")
+        with open(Path(test_dir) / f"test_{s}.tsv", newline="", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
             out[s] = {r["entity_id"] for r in reader}
     return out
 
