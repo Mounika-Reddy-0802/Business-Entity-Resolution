@@ -11,3 +11,5 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | 01:08 | krishna-2-005 | 2285f9a+ | naive exact-name blocker, 4 rapidfuzz features, lgbm, t=0.5 (synthetic) | 0.5397 | 1.3660 | 0.7231 | 0.7454 | 0.7007 |  | no |  |
 | 01:13 | krishna-2-005 | c776e2f+ | normalise views + keys k1-k6, cap 40 by best per-field cosine rank (synthetic) | 0.9992 | 39.9770 |  |  |  |  | no |  |
 | 01:18 | krishna-2-005 | 50b2c6c+ | 71 features incl. competition, lgbm 5-fold groupkfold, t=0.5 (synthetic) | 0.9992 | 39.9770 | 0.9876 | 0.9900 | 0.9852 |  | no |  |
+| 01:21 | krishna-2-005 | b60a65e+ | same blocking on harder synthetic v2 (chains in same city, city-only addresses) (synthetic) | 0.9969 | 39.9855 |  |  |  |  | no |  |
+| 01:21 | krishna-2-005 | b60a65e+ | 71 features, lgbm, t=0.5 on harder synthetic v2 (synthetic) | 0.9969 | 39.9855 | 0.9791 | 0.9805 | 0.9776 |  | no |  |

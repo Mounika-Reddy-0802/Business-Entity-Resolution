@@ -188,6 +188,8 @@ class Gen:
     def render_addr(self, e, noise):
         rng = self.rng
         a, country = e["addr"], e["country"]
+        if noise and rng.random() < 0.06:                    # only the city is known
+            return a["city"][0] + (f", {a['city'][1]}" if country != "France" else "")
         ab = lambda pair: pair[0] if (noise and rng.random() < 0.5) else pair[1]
         drop = lambda p: noise and rng.random() < p
         if country == "US":
@@ -268,8 +270,9 @@ def build_split(prefix, countries, n_s1, seed, id_start):
         n = int(n_s1 * share)
         chains = [g.entity(country)["core"] for _ in range(max(3, n // 60))]
         for _ in range(n):
-            if rng.random() < 0.12:
-                canon.append(g.entity(country, brand_name=rng.choice(chains)))   # chain branch
+            if rng.random() < 0.2:                                            # chain branch
+                city = rng.choice({"US": US, "India": IN, "France": FR}[country]["city"][:4])
+                canon.append(g.entity(country, brand_name=rng.choice(chains), city=city))
             else:
                 canon.append(g.entity(country))
     rng.shuffle(canon)
@@ -288,6 +291,9 @@ def build_split(prefix, countries, n_s1, seed, id_start):
         if rng.random() < 0.08:                                   # same name, other city
             twin = g.entity(e["country"], brand_name=e["core"])
             add("S2" if rng.random() < 0.5 else "S3", twin)
+        if rng.random() < 0.06:                                   # same name, same city, other street
+            sib = g.entity(e["country"], brand_name=e["core"], city=e["addr"]["city"])
+            add("S2" if rng.random() < 0.5 else "S3", sib)
         if rng.random() < 0.05:                                   # same address, other business
             other = g.entity(e["country"], city=e["addr"]["city"])
             other["addr"] = dict(e["addr"])

@@ -9,3 +9,4 @@ One line per decision: time IST, who, what was decided, why.
 - 2026-09-25 01:16 — krishna-2-005 — cap ranks candidates by the better of their name-cosine and address-cosine ranks (recall at 20 rises from 0.960 to 0.998 vs name+0.5*address); cap 40.
 - 2026-09-25 01:16 — krishna-2-005 — keep K1-K5 although leave-one-out recall shows only K6 matters on synthetic data: they are cheap, feed key-flag features and the real data may need them; re-check on the organiser data.
 - 2026-09-25 01:16 — krishna-2-005 — K2 blocks on the first significant token, the first sorted token and the rarest token (key values with more than 200 S2/S3 records are skipped).
+- 2026-09-25 01:24 — krishna-2-005 — harder synthetic v2 (20% chain branches in 4 cities, 6% city-only addresses, same-name same-city distractors); rows before this one used v1 and are not comparable.
