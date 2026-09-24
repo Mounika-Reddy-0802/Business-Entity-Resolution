@@ -150,9 +150,12 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "sweep":
         sweep(log="--log" in sys.argv)
         sys.exit(0)
+    write_test()
+    if not (DATA / "scores" / "val_scores.parquet").exists():
+        print("model trained on the full training split; no validation score")
+        sys.exit(0)
     metrics = evaluate_val()
     print(metrics)
-    write_test()
     if "--log" in sys.argv:
         i = sys.argv.index("--log")
         train = json.loads((ROOT / "models" / "train_metrics.json").read_text())

@@ -9,7 +9,8 @@ lightgbm==4.5.0
 scipy==1.13.1
 tqdm==4.66.5
 pytest==8.3.2
-# Laptop C only (neural track); pin the exact versions that install on that machine
-# torch
-# sentence-transformers
-# transformers
+# optional neural stage (src/neural/embeddings.py, disabled by default); CPU torch from
+# https://download.pytorch.org/whl/cpu
+# torch==2.14.0+cpu
+# sentence-transformers==6.1.0
+# transformers==5.17.0

@@ -128,12 +128,16 @@ def score(df):
 
 
 def predict():
-    """Score the validation side and the test split."""
+    """Score the test split, and the validation side unless the model was trained on it."""
     SCORES.mkdir(parents=True, exist_ok=True)
-    tr = pd.read_parquet(DATA / "features" / "train_features.parquet")
-    val = tr[tr.side == "val"].reset_index(drop=True)
-    val["p"] = score(val)
-    val[["s1_id", "cand_id", "p"]].to_parquet(SCORES / "val_scores.parquet", index=False)
+    full = json.loads((MODELS / "train_metrics.json").read_text()).get("full", False)
+    if full:
+        (SCORES / "val_scores.parquet").unlink(missing_ok=True)
+    else:
+        tr = pd.read_parquet(DATA / "features" / "train_features.parquet")
+        val = tr[tr.side == "val"].reset_index(drop=True)
+        val["p"] = score(val)
+        val[["s1_id", "cand_id", "p"]].to_parquet(SCORES / "val_scores.parquet", index=False)
     te = pd.read_parquet(DATA / "features" / "test_features.parquet")
     te["p"] = score(te)
     te[["s1_id", "cand_id", "p"]].to_parquet(SCORES / "test_scores.parquet", index=False)
