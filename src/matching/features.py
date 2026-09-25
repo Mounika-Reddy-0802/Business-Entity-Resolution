@@ -224,7 +224,7 @@ def train_sample():
     val_s1 = load_split()
     s1 = load_normalised("train", ["entity_id"])["source1"].entity_id.to_numpy()
     rng = np.random.RandomState(42)
-    is_val = np.isin(s1, np.array(sorted(val_s1), dtype=object))
+    is_val = pd.Series(s1).isin(val_s1).to_numpy()   # hash lookup; np.isin on objects is quadratic
     fit = rng.choice(s1[~is_val], min(SAMPLE_FIT, (~is_val).sum()), replace=False)
     val = rng.choice(s1[is_val], min(SAMPLE_VAL, is_val.sum()), replace=False)
     return {**{s: "fit" for s in fit}, **{s: "val" for s in val}}

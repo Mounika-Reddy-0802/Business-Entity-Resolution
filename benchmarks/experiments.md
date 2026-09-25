@@ -40,3 +40,4 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | 07:54 | Rayyan-Mohammed | 62c61d4+ | learning rate back to 0.05: 5 lightgbm seeds, fixed split: mean val f0.5, std 0.0007 (0.9831 at 0.02; same within noise, 3x faster) (synthetic) |  |  | 0.9829 |  |  |  | no |  |
 | 14:39 | krishna-2-005 | 4c5b7c8+ | name+location keys kp/kn/knp/kt/ka, cap 40 by cheap score | 0.8945 | 38.1854 |  |  |  |  | no |  |
 | 20:19 | krishna-2-005 | 00c0584+ | cap 40 by learned cap ranker (fit-side 20k sample) | 0.9417 | 38.1854 |  |  |  |  | no |  |
+| 23:08 | krishna-2-005 | cc219a1+ | decision rules 1-7 tuned on oof, kept if val f0.5 rises | 0.9398 | 19.6823 | 0.9574 | 0.9710 | 0.9374 |  | no |  |

@@ -53,3 +53,14 @@ def test_write_pairs_tsv_keeps_order_and_empty_rows(tmp_path):
     write_pairs_tsv(pairs, ["S1-1", "S1-2", "S1-3"], path, "matched_entity_ids")
     assert path.read_text().splitlines()[0] == "source1_entity_id\tmatched_entity_ids"
     assert read_id_list_tsv(path, "matched_entity_ids") == {"S1-1": ["S3-1"], "S1-2": ["S2-9", "S3-4"], "S1-3": []}
+
+
+def test_evaluator_matches_reference_for_every_rule():
+    from src.matching.decide import Evaluator
+    truth = {"S1-1": ["S2-1", "S3-1"], "S1-2": [], "S1-3": ["S3-9"], "S1-4": []}
+    ev = Evaluator(SCORES, truth)
+    for cfg in ({}, {"t_s2": 0.3, "t_s3": 0.6}, {"t_s2": 0.3, "t_s3": 0.3, "alpha": 0.8},
+                {"t_s2": 0.3, "t_s3": 0.3, "one_to_one": True}, {"t_s2": 0.3, "t_s3": 0.3, "cap_s2": 1},
+                {"t_s2": 0.3, "t_s3": 0.3, "t_single": 0.6}):
+        c = {**BASE, **cfg}
+        assert abs(ev.f05(c) - fast_f05(apply(SCORES, c), truth_frame(truth), list(truth))) < 1e-12

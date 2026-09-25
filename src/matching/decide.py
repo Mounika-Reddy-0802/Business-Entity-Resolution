@@ -86,15 +86,60 @@ def sample_truth(side):
     return {s: gt.get(s, []) for s, sd in train_sample().items() if sd == side}
 
 
+class Evaluator:
+    """Macro F0.5 of any decision config on one fixed score table, in milliseconds: labels, group
+    codes and per-group best scores are computed once, each config is a numpy mask + bincount.
+    Matches fast_f05(apply(scores, cfg), ...) exactly (tests/test_decide.py)."""
+
+    def __init__(self, scores, truth):
+        df = scores[["s1_id", "cand_id", "p"]].reset_index(drop=True)
+        ids = list(truth)
+        self.n1 = len(ids)
+        self.k1 = pd.Categorical(df.s1_id, categories=ids).codes.astype(np.int64)
+        self.k2 = pd.factorize(df.cand_id)[0]
+        self.p = df.p.to_numpy()
+        self.is_s3 = df.cand_id.str.startswith("S3-").to_numpy(dtype=bool)
+        self.label = df.merge(truth_frame(truth).assign(t=1), how="left", on=["s1_id", "cand_id"]
+                              ).t.notna().to_numpy()
+        self.n_true = np.array([len(truth[s]) for s in ids], dtype=float)
+        self.best1 = pd.Series(self.p).groupby(self.k1).transform("max").to_numpy()
+        self.best2 = pd.Series(self.p).groupby(self.k2).transform("max").to_numpy()
+        self.s1_id = df.s1_id
+
+    def mask(self, cfg):
+        keep = self.p >= np.where(self.is_s3, cfg["t_s3"], cfg["t_s2"])
+        if cfg["alpha"] > 0:
+            keep &= self.p >= cfg["alpha"] * self.best1
+        if cfg["one_to_one"]:
+            keep &= self.p >= self.best2
+        if cfg["t_single"] > 0:
+            keep &= self.best1 >= cfg["t_single"]
+        for is_src, cap in ((~self.is_s3, cfg["cap_s2"]), (self.is_s3, cfg["cap_s3"])):
+            if cap > 0:
+                idx = np.flatnonzero(keep & is_src)
+                rank = pd.Series(self.p[idx]).groupby(self.k1[idx]).rank(ascending=False, method="first")
+                keep[idx[rank.to_numpy() > cap]] = False
+        return keep
+
+    def f05(self, cfg):
+        m = self.mask(cfg)
+        tp = np.bincount(self.k1[m], weights=self.label[m], minlength=self.n1)
+        n_pred = np.bincount(self.k1[m], minlength=self.n1).astype(float)
+        prec = np.divide(tp, n_pred, out=np.zeros_like(tp), where=n_pred > 0)
+        rec = np.divide(tp, self.n_true, out=np.zeros_like(tp), where=self.n_true > 0)
+        f = np.divide(1.25 * prec * rec, 0.25 * prec + rec, out=np.zeros_like(tp),
+                      where=(0.25 * prec + rec) > 0)
+        f[(self.n_true == 0) & (n_pred == 0)] = 1.0
+        return float(f.mean())
+
+
 def sweep(log=False):
     """Tune each rule on fit-side OOF scores in PLAN order; keep a rule only if val F0.5 rises."""
     oof = pd.read_parquet(DATA / "scores" / "train_oof.parquet")
     val = pd.read_parquet(DATA / "scores" / "val_scores.parquet")
     fit_truth, val_truth = sample_truth("fit"), sample_truth("val")
-    fit_tp, val_tp = truth_frame(fit_truth), truth_frame(val_truth)
-    fit_ids, val_ids = list(fit_truth), list(val_truth)
-    f_oof = lambda c: fast_f05(apply(oof, c), fit_tp, fit_ids)
-    f_val = lambda c: fast_f05(apply(val, c), val_tp, val_ids)
+    ev_oof, ev_val = Evaluator(oof, fit_truth), Evaluator(val, val_truth)
+    f_oof, f_val = ev_oof.f05, ev_val.f05
 
     cfg = dict(BASE)
     history = [{"rule": "t=0.5", "cfg": dict(cfg), "oof": f_oof(cfg), "val": f_val(cfg)}]
