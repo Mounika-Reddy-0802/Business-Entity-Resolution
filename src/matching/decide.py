@@ -17,12 +17,15 @@ import sys
 import numpy as np
 import pandas as pd
 
+from ..blocking.normalise import load_normalised
 from ..common.evaluate import blocking_recall, log_run, macro_f05, per_group_f05
-from ..common.io_utils import DATA, OUTPUT, ROOT, load_sources, pairs_to_map, write_id_list_tsv
-from ..common.split import ground_truth_for, load_split
+from ..common.io_utils import DATA, OUTPUT, ROOT, load_ground_truth, pairs_to_map, write_id_list_tsv
+from ..common.split import load_split
 
 CONFIG = ROOT / "models" / "decision.json"
-BASE = {"t_s2": 0.5, "t_s3": 0.5, "alpha": 0.0, "one_to_one": False, "cap_s2": 0, "cap_s3": 0,
+# one-to-one is on from the start: in the training truth no S2/S3 id belongs to two S1 entities,
+# and the validation sample holds too few competing S1 entities to show its full effect
+BASE = {"t_s2": 0.5, "t_s3": 0.5, "alpha": 0.0, "one_to_one": True, "cap_s2": 0, "cap_s3": 0,
         "t_single": 0.0}
 
 
@@ -76,11 +79,18 @@ def learned_caps(truth):
     return int(np.ceil(per.s2.quantile(0.995))), int(np.ceil(per.s3.quantile(0.995)))
 
 
+def sample_truth(side):
+    """Ground truth for the S1 entities of the fixed training sample on one side ('fit'/'val')."""
+    from .features import train_sample
+    gt = load_ground_truth()
+    return {s: gt.get(s, []) for s, sd in train_sample().items() if sd == side}
+
+
 def sweep(log=False):
     """Tune each rule on fit-side OOF scores in PLAN order; keep a rule only if val F0.5 rises."""
     oof = pd.read_parquet(DATA / "scores" / "train_oof.parquet")
     val = pd.read_parquet(DATA / "scores" / "val_scores.parquet")
-    fit_truth, val_truth = ground_truth_for("fit"), ground_truth_for("val")
+    fit_truth, val_truth = sample_truth("fit"), sample_truth("val")
     fit_tp, val_tp = truth_frame(fit_truth), truth_frame(val_truth)
     fit_ids, val_ids = list(fit_truth), list(val_truth)
     f_oof = lambda c: fast_f05(apply(oof, c), fit_tp, fit_ids)
@@ -105,7 +115,6 @@ def sweep(log=False):
     try_rule("1 global threshold", [{"t_s2": t, "t_s3": t} for t in grid_t])
     try_rule("2 per-source thresholds", [{"t_s2": a, "t_s3": b} for a in grid_t for b in grid_t])
     try_rule("3 relative alpha", [{"alpha": a} for a in np.round(np.arange(0.5, 0.96, 0.05), 2)])
-    try_rule("4 one-to-one", [{"one_to_one": True}])
     c2, c3 = learned_caps(fit_truth)
     try_rule("5 cardinality caps", [{"cap_s2": c2, "cap_s3": c3}])
     try_rule("6 singleton guard", [{"t_single": t} for t in np.round(np.arange(0.3, 0.99, 0.02), 2)])
@@ -122,8 +131,8 @@ def evaluate_val(cfg=None):
     """Val F0.5 overall, per country and singleton/matched, plus val-side blocking recall."""
     cfg = cfg or load_config()
     scores = pd.read_parquet(DATA / "scores" / "val_scores.parquet")
-    truth = ground_truth_for("val")
-    s1 = load_sources("train")["source1"].set_index("entity_id")
+    truth = sample_truth("val")
+    s1 = load_normalised("train", ["entity_id", "country"])["source1"].set_index("entity_id")
     pred = pairs_to_map(apply(scores, cfg))
     country = {k: s1.loc[k, "country"] for k in truth}
     per = per_group_f05(pred, truth, country)
@@ -139,7 +148,7 @@ def write_test(cfg=None):
     """Apply the decision config to test scores and write both submission files."""
     cfg = cfg or load_config()
     scores = pd.read_parquet(DATA / "scores" / "test_scores.parquet")
-    s1_ids = list(load_sources("test")["source1"]["entity_id"])
+    s1_ids = list(load_normalised("test", ["entity_id"])["source1"].entity_id)
     write_id_list_tsv(pairs_to_map(apply(scores, cfg)), s1_ids, OUTPUT / "matching_results.tsv",
                       "matched_entity_ids")
     write_id_list_tsv(pairs_to_map(scores), s1_ids, OUTPUT / "candidate_pairs.tsv", "candidate_entity_ids")

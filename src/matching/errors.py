@@ -13,17 +13,16 @@ import pandas as pd
 from ..blocking.normalise import load_normalised
 from ..common.evaluate import f05_entity
 from ..common.io_utils import DATA, ROOT, pairs_to_map
-from ..common.split import ground_truth_for
-from .decide import apply, load_config
+from .decide import apply, load_config, sample_truth
 
 
 def main(n=200):
     val = pd.read_parquet(DATA / "scores" / "val_scores.parquet")
-    truth = ground_truth_for("val")
+    truth = sample_truth("val")
     pred = pairs_to_map(apply(val, load_config()))
     cands = pairs_to_map(val)
     p = {(s, c): v for s, c, v in zip(val.s1_id, val.cand_id, val.p)}
-    src = load_normalised("train")
+    src = load_normalised("train", ["entity_id", "business_name", "business_address", "country"])
     recs = pd.concat(src.values()).set_index("entity_id")
     worst = sorted(((f05_entity(pred.get(k, []), v), k) for k, v in truth.items()))[:n]
     rows = []

@@ -41,6 +41,6 @@ def test_fast_f05_matches_reference_metric():
 
 
 def test_second_largest_per_group():
-    from src.matching.features import second_largest
+    from src.matching.ranking import second_largest
     got = second_largest([0.2, 0.9, 0.5, 0.7, 0.1], ["a", "a", "a", "b", "c"])
     assert list(got) == [0.5, 0.5, 0.5, 0.0, 0.0]

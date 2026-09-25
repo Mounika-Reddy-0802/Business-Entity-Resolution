@@ -14,9 +14,8 @@ import pandas as pd
 from ..blocking.block import KEYS
 from ..blocking.normalise import load_normalised
 from ..common.evaluate import log_run
-from ..common.io_utils import DATA
-from ..common.split import ground_truth_for
-from .decide import apply, fast_f05, load_config, truth_frame
+from .decide import apply, fast_f05, load_config, sample_truth, truth_frame
+from .features import load_features
 from .train_lgbm import DROPPED, feature_cols, params
 
 ROUNDS = 200
@@ -41,13 +40,13 @@ def score_transfer(df, country, cols, train_c, test_c, cfg):
     te = df[(df.side == "val") & (df.country == test_c)].copy()
     model = lgb.train(params(), lgb.Dataset(tr[cols], tr.label), ROUNDS)
     te["p"] = model.predict(te[cols])
-    truth = {k: v for k, v in ground_truth_for("val").items() if country.get(k) == test_c}
+    truth = {k: v for k, v in sample_truth("val").items() if country.get(k) == test_c}
     return fast_f05(apply(te, cfg), truth_frame(truth), list(truth))
 
 
 def main(log=False):
-    df = pd.read_parquet(DATA / "features" / "train_features.parquet")
-    s1 = load_normalised("train")["source1"]
+    df = load_features("train")
+    s1 = load_normalised("train", ["entity_id", "country"])["source1"]
     country = dict(zip(s1.entity_id, s1.country))
     df["country"] = df.s1_id.map(country)
     cols = feature_cols(df.drop(columns="country"), DROPPED)

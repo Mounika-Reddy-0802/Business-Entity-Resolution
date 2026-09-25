@@ -197,7 +197,7 @@ def main(splits):
     for split in splits:
         outputs = [out / f"{split}_{s}.parquet" for s in SOURCES]
         inputs = [RAW / split / f"{split}_{s}.tsv" for s in SOURCES]
-        if is_fresh(outputs, inputs):
+        if is_fresh(outputs, inputs, ["blocking/normalise.py"]):
             print(split, "normalised (cached)")
             continue
         for s in SOURCES:

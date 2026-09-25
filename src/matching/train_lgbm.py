@@ -16,7 +16,8 @@ from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import GroupKFold
 
 from ..common.io_utils import DATA, ROOT
-from .features import second_largest
+from .features import load_features, parts
+from .ranking import second_largest
 
 META = ["s1_id", "cand_id", "side", "label"]
 PARAMS = {"objective": "binary", "learning_rate": 0.05, "num_leaves": 63, "min_child_samples": 20,
@@ -25,7 +26,9 @@ PARAMS = {"objective": "binary", "learning_rate": 0.05, "num_leaves": 63, "min_c
           "num_threads": 0}
 # removed after the cross-country check (benchmarks/experiments.md): dropping lifted both directions
 DROPPED = ["is_s3"]
-STAGE2 = True             # second model on stage-1 score context (see score_context)
+# second model on stage-1 score context: off on the organiser data, where training uses a sample of
+# S1 entities and the context of the sample would be weaker than the full-table context at test
+STAGE2 = False
 MAX_ROUNDS = 2000
 FOLDS = 5
 MODELS = ROOT / "models"
@@ -41,7 +44,7 @@ def feature_cols(df, drop=()):
 
 
 def train_rows(full):
-    df = pd.read_parquet(DATA / "features" / "train_features.parquet")
+    df = load_features("train")
     return df if full else df[df.side == "fit"].reset_index(drop=True)
 
 
@@ -134,13 +137,15 @@ def predict():
     if full:
         (SCORES / "val_scores.parquet").unlink(missing_ok=True)
     else:
-        tr = pd.read_parquet(DATA / "features" / "train_features.parquet")
+        tr = load_features("train")
         val = tr[tr.side == "val"].reset_index(drop=True)
         val["p"] = score(val)
         val[["s1_id", "cand_id", "p"]].to_parquet(SCORES / "val_scores.parquet", index=False)
-    te = pd.read_parquet(DATA / "features" / "test_features.parquet")
-    te["p"] = score(te)
-    te[["s1_id", "cand_id", "p"]].to_parquet(SCORES / "test_scores.parquet", index=False)
+    scored = []
+    for f in parts("test"):                     # tens of millions of pairs: one part at a time
+        te = pd.read_parquet(f)
+        scored.append(te[["s1_id", "cand_id"]].assign(p=score(te)))
+    pd.concat(scored, ignore_index=True).to_parquet(SCORES / "test_scores.parquet", index=False)
 
 
 if __name__ == "__main__":

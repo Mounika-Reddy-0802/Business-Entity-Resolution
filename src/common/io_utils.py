@@ -64,13 +64,15 @@ def pairs_to_map(df, id_col="cand_id"):
     return df.groupby("s1_id")[id_col].apply(list).to_dict()
 
 
-def is_fresh(outputs, inputs):
-    """True when every output exists and is newer than every input and every file under src/,
-    so a deterministic stage can be skipped. FORCE=1 in the environment always reruns."""
+def is_fresh(outputs, inputs, code=None):
+    """True when every output exists and is newer than every input and every code file the stage
+    depends on (module paths relative to src/, e.g. "blocking/normalise.py"; default: all of
+    src/), so a deterministic stage can be skipped. FORCE=1 in the environment always reruns."""
     import os
     outputs, inputs = [Path(p) for p in outputs], [Path(p) for p in inputs]
     if os.environ.get("FORCE") == "1" or not all(p.exists() for p in outputs + inputs):
         return False
-    newest_in = max([p.stat().st_mtime for p in inputs] +
-                    [p.stat().st_mtime for p in (ROOT / "src").rglob("*.py")])
+    src = ROOT / "src"
+    code_files = [src / c for c in code] if code else list(src.rglob("*.py"))
+    newest_in = max(p.stat().st_mtime for p in inputs + code_files)
     return min(p.stat().st_mtime for p in outputs) > newest_in
