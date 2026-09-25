@@ -35,3 +35,4 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | 02:45 | Mounika-Reddy-0802 | 6086b5d+ | tried: lambda_l2=0.0 (synthetic) | 0.9969 | 39.9855 | 0.9829 | 0.9862 | 0.9796 |  | no |  |
 | 02:47 | Mounika-Reddy-0802 | 6086b5d+ | tried: lambda_l2=10.0 (synthetic) | 0.9969 | 39.9855 | 0.9816 | 0.9846 | 0.9787 |  | no |  |
 | 02:52 | Mounika-Reddy-0802 | 6086b5d+ | learning rate 0.05 -> 0.02 (best of 14 one-change variants) (synthetic) | 0.9969 | 39.9855 | 0.9842 | 0.9869 | 0.9814 |  | no |  |
+| 05:44 | Rayyan-Mohammed | f3273d9+ | 5 lightgbm seeds, fixed split: mean val f0.5, std 0.0012 (synthetic) |  |  | 0.9831 |  |  |  | no |  |

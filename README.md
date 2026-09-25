@@ -53,4 +53,7 @@ Every number is a row in `benchmarks/experiments.md` with its json in `benchmark
 | + stage-2 model on stage-1 score context | 0.997 | 40 | 0.9838 |
 | + learning rate 0.02 (best of 14 one-change variants, current) | 0.997 | 40 | **0.9842** |
 
+Seed noise: over 5 LightGBM seeds the current configuration scores 0.9831 ± 0.0012 (range
+0.9811–0.9842; seed 42 is the best), so single-seed differences below ~0.0025 are not evidence.
+
 Cross-country (train one country, score the other): India→US 0.9735, US→India 0.9663.
