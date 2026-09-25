@@ -206,9 +206,11 @@ def main(splits):
             print(split, s, len(df), "normalised", flush=True)
 
 
-def load_normalised(split, columns=None):
-    """{'source1': df, 'source2': df, 'source3': df} of normalised records."""
-    return {s: pd.read_parquet(DATA / "normalised" / f"{split}_{s}.parquet", columns=columns)
+def load_normalised(split, columns=None, arrow=False):
+    """{'source1': df, 'source2': df, 'source3': df} of normalised records. arrow=True keeps
+    strings in Arrow buffers (a fraction of the memory of Python strings for millions of rows)."""
+    backend = {"dtype_backend": "pyarrow"} if arrow else {}
+    return {s: pd.read_parquet(DATA / "normalised" / f"{split}_{s}.parquet", columns=columns, **backend)
             for s in SOURCES}
 
 

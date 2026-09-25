@@ -7,7 +7,9 @@ components), so keys combine name skeleton tokens with single address words or n
 is hashed to a 64-bit integer together with the country (country is only ever an equality
 constraint), both sides are exploded to (key, record) rows, keys shared by more than MAX_BLOCK
 Source 2/3 records are skipped, and the join gives the candidate pairs. Candidates are ranked by a
-cheap skeleton similarity and capped.
+small LightGBM cap ranker on cheap signals (key flags, skeleton and number similarity, empty
+addresses), trained on the uncapped pairs of a fixed fit-side training sample and reused on test,
+and capped per S1 entity.
 
 Keys:
   kp   a pair of name skeleton tokens (DBA alternative name included), looser block limit:
@@ -19,7 +21,8 @@ Keys:
 
 Writes s1_id, cand_id, kp, kn, knp, kt, ka, name_sim, addr_sim, cheap_score (cap-ranker p).
 
-    python -m src.blocking.block train test [--report [--log <tag> "<change>"]]
+    python -m src.blocking.block train test [--reuse-pairs] [--report [--log <tag> "<change>"]]
+    python -m src.blocking.block train test --recap      # trim existing files to CAP
 """
 import os
 import sys
@@ -29,6 +32,8 @@ from multiprocessing import Pool
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 from rapidfuzz import fuzz, process
 
 from ..common.evaluate import log_run
@@ -39,9 +44,10 @@ from .normalise import load_normalised, skeleton
 KEYS = ["kp", "kn", "knp", "kt", "ka"]
 MAX_BLOCK = {"kp": 150, "kn": 60, "knp": 60, "kt": 60, "ka": 60}
 MAX_TOKENS = 4            # name tokens used for pair keys (first 4 in sorted order: <= 6 pairs)
-CAP = 40                  # final candidates per S1 entity
+CAP = 20                  # final candidates per S1 entity (recall 0.9409 vs 0.9417 at 40)
 REPORT_CAPS = (10, 20, 25, 40, 60, 80)
-S1_CHUNK = 250_000
+S1_CHUNK = 125_000
+SIM_BATCH = 1_000_000
 RANKER_SAMPLE = 20_000    # S1 entities whose uncapped pairs train the cap ranker
 RANKER = ROOT / "models" / "cap_ranker.txt"
 COLS = ["entity_id", "country", "name_skel", "name_alt", "addr_numbers", "addr_skel"]
@@ -135,20 +141,34 @@ def chunk_pairs(tmp, filters):
     return flags.groupby(["idx1", "idx2"], sort=False).max().reset_index()
 
 
+def take(series, idx):
+    """Python strings of series at positions idx only (the series may hold Arrow strings)."""
+    return series.array.take(idx).to_numpy(dtype=object)
+
+
 def cheap_features(pairs, s1, other):
-    """Fast ranking signals for every pair (C++ string scores, no Python loops)."""
+    """Fast ranking signals for every pair (C++ string scores). Strings are materialised in
+    batches of SIM_BATCH pairs, so tens of millions of pairs never become Python strings at once."""
     i1, i2 = pairs.idx1.to_numpy(), pairs.idx2.to_numpy()
-    col = lambda df, c, i: df[c].to_numpy()[i]
-    n1, n2 = col(s1, "name_skel", i1), col(other, "name_skel", i2)
-    a1, a2 = col(s1, "addr_skel", i1), col(other, "addr_skel", i2)
-    d1, d2 = col(s1, "addr_numbers", i1), col(other, "addr_numbers", i2)
-    sim = lambda a, b, f: (process.cpdist(a, b, scorer=f, workers=-1) / 100.0).astype(np.float32)
+    n = len(pairs)
+    sims = {k: np.empty(n, dtype=np.float32) for k in ("name_sim", "name_ratio", "addr_sim", "num_sim")}
+    specs = [("name_sim", "name_skel", fuzz.token_set_ratio), ("name_ratio", "name_skel", fuzz.ratio),
+             ("addr_sim", "addr_skel", fuzz.token_set_ratio), ("num_sim", "addr_numbers", fuzz.token_set_ratio)]
+    empty1 = np.empty(n, dtype=np.float32)
+    empty2 = np.empty(n, dtype=np.float32)
+    for lo in range(0, n, SIM_BATCH):
+        b1, b2 = i1[lo:lo + SIM_BATCH], i2[lo:lo + SIM_BATCH]
+        for name, column, scorer in specs:
+            a, b = take(s1[column], b1), take(other[column], b2)
+            sims[name][lo:lo + SIM_BATCH] = process.cpdist(a, b, scorer=scorer, workers=-1) / 100.0
+            if column == "addr_skel":
+                empty1[lo:lo + SIM_BATCH] = [len(x) == 0 for x in a]
+                empty2[lo:lo + SIM_BATCH] = [len(x) == 0 for x in b]
     f = pd.DataFrame({k: pairs[k].to_numpy(np.float32) for k in KEYS})
     f["n_keys"] = f[KEYS].sum(axis=1)
-    f["name_sim"], f["name_ratio"] = sim(n1, n2, fuzz.token_set_ratio), sim(n1, n2, fuzz.ratio)
-    f["addr_sim"], f["num_sim"] = sim(a1, a2, fuzz.token_set_ratio), sim(d1, d2, fuzz.token_set_ratio)
-    f["addr_empty_1"] = (pd.Series(a1).str.len().to_numpy() == 0).astype(np.float32)
-    f["addr_empty_2"] = (pd.Series(a2).str.len().to_numpy() == 0).astype(np.float32)
+    for k in ("name_sim", "name_ratio", "addr_sim", "num_sim"):
+        f[k] = sims[k]
+    f["addr_empty_1"], f["addr_empty_2"] = empty1, empty2
     return f
 
 
@@ -170,20 +190,25 @@ def fit_ranker(tmp, s1, other, truth):
     return model
 
 
-def block(split, cap=CAP):
-    """Candidates for one split, capped per S1 entity and written to data/candidates/.
+def block(split, cap=CAP, reuse_pairs=False):
+    """Candidates for one split, capped per S1 entity and streamed to data/candidates/ chunk by
+    chunk. reuse_pairs skips pass 1 when its pair files from an interrupted run are present.
     For train, also returns recall statistics against the ground truth."""
-    src = load_normalised(split, COLS)
+    src = load_normalised(split, COLS, arrow=True)
     s1 = src["source1"]
     other = pd.concat([src["source2"], src["source3"]], ignore_index=True)
     tmp = DATA / "candidates" / f"_{split}_pairs"
-    print(split, "keys", flush=True)
-    spill_pairs(s1, other, tmp)
+    if reuse_pairs and all((tmp / f"{k}.parquet").exists() for k in KEYS):
+        print(split, "reusing pass-1 pairs", flush=True)
+    else:
+        print(split, "keys", flush=True)
+        spill_pairs(s1, other, tmp)
     truth = truth_index(s1, other) if split == "train" else None
     ranker = fit_ranker(tmp, s1, other, truth) if truth is not None else lgb.Booster(model_file=str(RANKER))
     stats = {k: 0 for k in KEYS + ["union"] + [f"cap{c}" for c in REPORT_CAPS]}
     n_pairs = {k: 0 for k in stats}
-    kept = []
+    path = DATA / "candidates" / f"{split}_candidates.parquet"
+    writer, n_kept = None, 0
     for lo in range(0, len(s1), S1_CHUNK):
         pairs = chunk_pairs(tmp, [("idx1", ">=", lo), ("idx1", "<", lo + S1_CHUNK)])
         f = cheap_features(pairs, s1, other)
@@ -203,13 +228,17 @@ def block(split, cap=CAP):
                 stats[f"cap{c}"] += int((is_hit & (rank <= c)).sum())
                 n_pairs[f"cap{c}"] += int((rank <= c).sum())
         keep = pairs[rank <= cap]
-        kept.append(pd.DataFrame({
-            "s1_id": s1.entity_id.to_numpy()[keep.idx1.to_numpy()],
-            "cand_id": other.entity_id.to_numpy()[keep.idx2.to_numpy()],
-            **{c: keep[c].to_numpy() for c in KEYS + ["name_sim", "addr_sim", "cheap_score"]}}))
+        table = pa.Table.from_pandas(pd.DataFrame({
+            "s1_id": take(s1.entity_id, keep.idx1.to_numpy()),
+            "cand_id": take(other.entity_id, keep.idx2.to_numpy()),
+            **{c: keep[c].to_numpy() for c in KEYS + ["name_sim", "addr_sim", "cheap_score"]}}),
+            preserve_index=False)
+        writer = writer or pq.ParquetWriter(path, table.schema)
+        writer.write_table(table)
+        n_kept += len(keep)
         print(f"  S1 {lo:,}+: {len(pairs):,} pairs -> {len(keep):,} kept", flush=True)
-    capped = pd.concat(kept, ignore_index=True)
-    capped.to_parquet(DATA / "candidates" / f"{split}_candidates.parquet", index=False)
+        del pairs, keep, table, rank
+    writer.close()
     for f in tmp.glob("*.parquet"):
         f.unlink()
     tmp.rmdir()
@@ -219,8 +248,19 @@ def block(split, cap=CAP):
         res = {**{f"recall_{k}": stats[k] / n_true for k in stats},
                **{f"cands_{k}": n_pairs[k] / n_s1 for k in n_pairs},
                "block_recall": stats[f"cap{cap}"] / n_true if cap in REPORT_CAPS else None,
-               "cands_per_s1": len(capped) / n_s1}
-    return capped, res
+               "cands_per_s1": n_kept / n_s1}
+    return n_kept, res
+
+
+def recap(split, cap=CAP):
+    """Trim an existing candidates file to the top `cap` per S1 entity by cap-ranker score (the
+    same ranking pass 2 uses, so the result equals blocking at that cap)."""
+    path = DATA / "candidates" / f"{split}_candidates.parquet"
+    df = pd.read_parquet(path, dtype_backend="pyarrow")
+    rank = df.groupby("s1_id", sort=False).cheap_score.rank(method="first", ascending=False)
+    df = df[(rank <= cap).to_numpy()]
+    df.to_parquet(path, index=False)
+    return len(df)
 
 
 def truth_index(s1, other):
@@ -236,13 +276,16 @@ if __name__ == "__main__":
     flags = [i for i, a in enumerate(args) if a.startswith("--")]
     splits = args[:flags[0] if flags else len(args)] or ["train", "test"]
     for split in splits:
+        if "--recap" in sys.argv:
+            print(split, f"{recap(split):,} candidate pairs after recap to {CAP}")
+            continue
         inputs = [DATA / "normalised" / f"{split}_{s}.parquet" for s in SOURCES]
         if "--report" not in sys.argv and is_fresh([DATA / "candidates" / f"{split}_candidates.parquet"], inputs,
                                                    ["blocking/block.py", "blocking/normalise.py"]):
             print(split, "candidates (cached)")
             continue
-        capped, res = block(split)
-        print(split, f"{len(capped):,} candidate pairs", flush=True)
+        n_kept, res = block(split, reuse_pairs="--reuse-pairs" in sys.argv)
+        print(split, f"{n_kept:,} candidate pairs", flush=True)
         if res:
             for k, v in res.items():
                 print(f"  {k}: {v:.4f}")

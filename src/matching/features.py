@@ -27,8 +27,8 @@ from ..common.split import load_split
 from .ranking import second_largest
 
 SAMPLE_FIT, SAMPLE_VAL = 200_000, 60_000
-PART_S1 = 100_000                 # S1 entities per output part
-CHUNK = 250_000                   # pairs per worker task
+PART_S1 = 25_000                  # S1 entities per output part (keeps Python strings per part small)
+CHUNK = 100_000                   # pairs per worker task
 WORKERS = 10
 LANDMARK = {"nr", "opp", "bsd", "bhd"}
 TEXT = ["name_clean", "name_core", "legal_suffix", "name_tokens", "name_skel", "name_alt",
