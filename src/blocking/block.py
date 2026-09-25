@@ -18,8 +18,10 @@ Keys:
   knp  a pair of name skeleton tokens + one address number
   kt   one name skeleton token (>= 3 letters) + one address word: survives a typo in the others
   ka   an address number + one address word (renamed or DBA records)
+  kaa  a pair of address words: same address, any name (native-script names whose
+       transliteration differs, domain-style names, addresses without numbers)
 
-Writes s1_id, cand_id, kp, kn, knp, kt, ka, name_sim, addr_sim, cheap_score (cap-ranker p).
+Writes s1_id, cand_id, kp, kn, knp, kt, ka, kaa, name_sim, addr_sim, cheap_score (cap-ranker p).
 
     python -m src.blocking.block train test [--reuse-pairs] [--report [--log <tag> "<change>"]]
     python -m src.blocking.block train test --recap      # trim existing files to CAP
@@ -41,8 +43,8 @@ from ..common.io_utils import DATA, ROOT, SOURCES, is_fresh, load_ground_truth
 from ..common.split import load_split
 from .normalise import load_normalised, skeleton
 
-KEYS = ["kp", "kn", "knp", "kt", "ka"]
-MAX_BLOCK = {"kp": 150, "kn": 60, "knp": 60, "kt": 60, "ka": 60}
+KEYS = ["kp", "kn", "knp", "kt", "ka", "kaa"]
+MAX_BLOCK = {"kp": 150, "kn": 60, "knp": 60, "kt": 60, "ka": 60, "kaa": 60}
 MAX_TOKENS = 4            # name tokens used for pair keys (first 4 in sorted order: <= 6 pairs)
 CAP = 20                  # final candidates per S1 entity (recall 0.9409 vs 0.9417 at 40)
 REPORT_CAPS = (10, 20, 25, 40, 60, 80)
@@ -90,6 +92,8 @@ def record_keys(df, kind):
         elif kind == "kt":
             out += [(f"{c}|{t}|{w}", pos) for t in toks[:MAX_TOKENS] if len(t) >= 3
                     for w in address_words(askel)]
+        elif kind == "kaa":
+            out += [(f"{c}|{a}|{b}", pos) for a, b in combinations(sorted(address_words(askel)), 2)]
         elif kind == "ka":
             out += [(f"{c}|{n}|{w}", pos) for n in address_numbers(nums) for w in address_words(askel)]
     return out
@@ -112,11 +116,15 @@ def exploded_keys(df, kind):
                          "idx": np.concatenate([p[1] for p in parts])}).drop_duplicates()
 
 
-def spill_pairs(s1, other, tmp):
+def spill_pairs(s1, other, tmp, reuse=False):
     """Pass 1: for each key kind, join all S1 keys with the filtered pool keys and write the
-    (idx1, idx2) pairs to tmp/<kind>.parquet sorted by idx1. One kind in memory at a time."""
+    (idx1, idx2) pairs to tmp/<kind>.parquet sorted by idx1. One kind in memory at a time;
+    with reuse, kinds whose file already exists are skipped."""
     tmp.mkdir(parents=True, exist_ok=True)
     for kind in KEYS:
+        if reuse and (tmp / f"{kind}.parquet").exists():
+            print(f"  {kind}: reused", flush=True)
+            continue
         a, b = exploded_keys(s1, kind), exploded_keys(other, kind)
         size = b.groupby("key").idx.transform("size")
         b = b[size <= MAX_BLOCK[kind]]
@@ -198,11 +206,8 @@ def block(split, cap=CAP, reuse_pairs=False):
     s1 = src["source1"]
     other = pd.concat([src["source2"], src["source3"]], ignore_index=True)
     tmp = DATA / "candidates" / f"_{split}_pairs"
-    if reuse_pairs and all((tmp / f"{k}.parquet").exists() for k in KEYS):
-        print(split, "reusing pass-1 pairs", flush=True)
-    else:
-        print(split, "keys", flush=True)
-        spill_pairs(s1, other, tmp)
+    print(split, "keys", flush=True)
+    spill_pairs(s1, other, tmp, reuse=reuse_pairs)
     truth = truth_index(s1, other) if split == "train" else None
     ranker = fit_ranker(tmp, s1, other, truth) if truth is not None else lgb.Booster(model_file=str(RANKER))
     stats = {k: 0 for k in KEYS + ["union"] + [f"cap{c}" for c in REPORT_CAPS]}
@@ -238,10 +243,7 @@ def block(split, cap=CAP, reuse_pairs=False):
         n_kept += len(keep)
         print(f"  S1 {lo:,}+: {len(pairs):,} pairs -> {len(keep):,} kept", flush=True)
         del pairs, keep, table, rank
-    writer.close()
-    for f in tmp.glob("*.parquet"):
-        f.unlink()
-    tmp.rmdir()
+    writer.close()                             # pass-1 files stay for --reuse-pairs
     res = None
     if truth is not None:
         n_true, n_s1 = len(truth), len(s1)

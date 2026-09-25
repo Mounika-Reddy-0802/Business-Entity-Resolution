@@ -22,7 +22,7 @@ def main(n=200):
     pred = pairs_to_map(apply(val, load_config()))
     cands = pairs_to_map(val)
     p = {(s, c): v for s, c, v in zip(val.s1_id, val.cand_id, val.p)}
-    src = load_normalised("train", ["entity_id", "business_name", "business_address", "country"])
+    src = load_normalised("train", ["entity_id", "business_name", "business_address", "country"], arrow=True)
     recs = pd.concat(src.values()).set_index("entity_id")
     worst = sorted(((f05_entity(pred.get(k, []), v), k) for k, v in truth.items()))[:n]
     rows = []

@@ -42,3 +42,4 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | 20:19 | krishna-2-005 | 00c0584+ | cap 40 by learned cap ranker (fit-side 20k sample) | 0.9417 | 38.1854 |  |  |  |  | no |  |
 | 23:08 | krishna-2-005 | cc219a1+ | decision rules 1-7 tuned on oof, kept if val f0.5 rises | 0.9398 | 19.6823 | 0.9574 | 0.9710 | 0.9374 |  | no |  |
 | 23:14 | krishna-2-005 | 060723e | decision rules 1-7 tuned on oof, kept if val f0.5 rises | 0.9398 | 19.6823 | 0.9574 | 0.9710 | 0.9374 |  | no |  |
+| 23:57 | krishna-2-005 | 6f83874+ | tried: learning rate 0.1, max rounds 4000 (vs 0.05 capped at 2000) | 0.9398 | 19.6823 | 0.9574 | 0.9710 | 0.9375 |  | no |  |

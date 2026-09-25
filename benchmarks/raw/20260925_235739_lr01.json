@@ -1,0 +1,49 @@
+{
+  "time": "2026-09-25 23:57",
+  "tag": "lr01",
+  "change": "tried: learning rate 0.1, max rounds 4000 (vs 0.05 capped at 2000)",
+  "who": "krishna-2-005",
+  "commit": "6f83874+",
+  "synthetic_data": false,
+  "f05": 0.9574484992769612,
+  "f05_US": 0.9709682409310441,
+  "f05_India": 0.9375476534539583,
+  "f05_matched": 0.9568945067067368,
+  "f05_singleton": 0.9668973818838399,
+  "block_recall": 0.9398047774597944,
+  "cands_per_s1": 19.682333333333332,
+  "train": {
+    "oof_auc": 0.9996376525119459,
+    "oof_auc_stage1": 0.9996376525119459,
+    "rounds": 1725,
+    "n_features": 64,
+    "train_pairs": 3935267,
+    "train_pos": 651079,
+    "full": false,
+    "stage2": false,
+    "params": {
+      "objective": "binary",
+      "learning_rate": 0.1,
+      "num_leaves": 63,
+      "min_child_samples": 20,
+      "feature_fraction": 0.8,
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "lambda_l2": 1.0,
+      "scale_pos_weight": 1.0,
+      "seed": 42,
+      "deterministic": true,
+      "verbose": -1,
+      "num_threads": 0
+    }
+  },
+  "decision": {
+    "t_s2": 0.725,
+    "t_s3": 0.675,
+    "alpha": 0.7,
+    "one_to_one": true,
+    "cap_s2": 0,
+    "cap_s3": 0,
+    "t_single": 0.0
+  }
+}

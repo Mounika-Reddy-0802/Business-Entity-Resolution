@@ -20,7 +20,7 @@ from .features import load_features, parts
 from .ranking import second_largest
 
 META = ["s1_id", "cand_id", "side", "label"]
-PARAMS = {"objective": "binary", "learning_rate": 0.05, "num_leaves": 63, "min_child_samples": 20,
+PARAMS = {"objective": "binary", "learning_rate": 0.1, "num_leaves": 63, "min_child_samples": 20,
           "feature_fraction": 0.8, "bagging_fraction": 0.8, "bagging_freq": 1, "lambda_l2": 1.0,
           "scale_pos_weight": 1.0, "seed": 42, "deterministic": True, "verbose": -1,
           "num_threads": 0}
@@ -29,7 +29,7 @@ DROPPED = ["is_s3"]
 # second model on stage-1 score context: off on the organiser data, where training uses a sample of
 # S1 entities and the context of the sample would be weaker than the full-table context at test
 STAGE2 = False
-MAX_ROUNDS = 2000
+MAX_ROUNDS = 4000
 FOLDS = 5
 MODELS = ROOT / "models"
 SCORES = DATA / "scores"
