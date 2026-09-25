@@ -19,7 +19,7 @@ from ..common.io_utils import DATA, ROOT
 from .features import second_largest
 
 META = ["s1_id", "cand_id", "side", "label"]
-PARAMS = {"objective": "binary", "learning_rate": 0.02, "num_leaves": 63, "min_child_samples": 20,
+PARAMS = {"objective": "binary", "learning_rate": 0.05, "num_leaves": 63, "min_child_samples": 20,
           "feature_fraction": 0.8, "bagging_fraction": 0.8, "bagging_freq": 1, "lambda_l2": 1.0,
           "scale_pos_weight": 1.0, "seed": 42, "deterministic": True, "verbose": -1,
           "num_threads": 0}

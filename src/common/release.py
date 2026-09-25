@@ -25,6 +25,12 @@ NOT_PACKAGED = {"setup_git.sh"}           # team git tooling, not part of the pi
 CODE_FILES = ("README.md", "requirements.txt")
 
 
+def packaged(f):
+    """True for source files that belong in the package (no caches, no git tooling)."""
+    return f.is_file() and "__pycache__" not in f.parts and f.suffix != ".pyc" \
+        and f.name not in NOT_PACKAGED
+
+
 def refuse_synthetic():
     if data_is_synthetic():
         sys.exit("refusing: data/raw/dataset holds the synthetic stand-in (docs/problems.md)")
@@ -67,7 +73,7 @@ def package(team):
             z.write(OUTPUT / name, f"output/{name}")
         for d in CODE_DIRS:
             for f in sorted((ROOT / d).rglob("*")):
-                if f.is_file() and "__pycache__" not in f.parts and f.suffix != ".pyc"                         and f.name not in NOT_PACKAGED:
+                if packaged(f):
                     z.write(f, f"{code}/{f.relative_to(ROOT).as_posix()}")
         for name in CODE_FILES:
             z.write(ROOT / name, f"{code}/{name}")

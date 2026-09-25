@@ -1,0 +1,26 @@
+{
+  "time": "2026-09-25 07:54",
+  "tag": "stability",
+  "change": "learning rate back to 0.05: 5 lightgbm seeds, fixed split: mean val f0.5, std 0.0007 (0.9831 at 0.02; same within noise, 3x faster)",
+  "who": "Rayyan-Mohammed",
+  "commit": "62c61d4+",
+  "synthetic_data": true,
+  "f05": 0.9828719573104058,
+  "f05_std": 0.0007058027553027216,
+  "f05_min": 0.9821359366145554,
+  "f05_max": 0.9837913502798377,
+  "seeds": [
+    42,
+    7,
+    123,
+    2024,
+    99
+  ],
+  "per_seed": [
+    0.9837913502798377,
+    0.9834257297892168,
+    0.982386626488407,
+    0.9821359366145554,
+    0.982620143380012
+  ]
+}
