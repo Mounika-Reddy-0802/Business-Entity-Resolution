@@ -14,7 +14,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from ..common.evaluate import blocking_recall, log_run
-from ..common.io_utils import DATA, pairs_to_map
+from ..common.io_utils import DATA, SOURCES, is_fresh, pairs_to_map
 from ..common.split import ground_truth_for, side_of
 from ..neural import embeddings
 from .normalise import STOP, load_normalised
@@ -239,6 +239,14 @@ if __name__ == "__main__":
     flags = [i for i, a in enumerate(args) if a.startswith("--")]
     splits = args[:flags[0] if flags else len(args)] or ["train", "test"]
     for split in splits:
+        inputs = [DATA / "normalised" / f"{split}_{s}.parquet" for s in SOURCES]
+        if embeddings.ENABLED:
+            inputs += [embeddings.OUT / f"{split}_{s}.npz" for s in SOURCES]
+        if split == "train":
+            inputs += [DATA / "splits" / "val_s1_ids.txt", DATA / "splits" / "val_other_ids.txt"]
+        if "--report" not in sys.argv and is_fresh([DATA / "candidates" / f"{split}_candidates.parquet"], inputs):
+            print(split, "candidates (cached)")
+            continue
         full, capped = block(split)
         print(split, len(full), "pairs uncapped,", len(capped), "capped")
         if split == "train" and "--report" in sys.argv:

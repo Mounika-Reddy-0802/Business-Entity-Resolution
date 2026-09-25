@@ -11,7 +11,7 @@ import sys
 import pandas as pd
 from unidecode import unidecode
 
-from ..common.io_utils import DATA, SOURCES, load_sources
+from ..common.io_utils import DATA, RAW, SOURCES, is_fresh, load_sources
 
 # canonical code for each legal-suffix spelling (after punctuation removal and letter joining)
 LEGAL_SUFFIX = {
@@ -139,6 +139,13 @@ def main(splits):
     out = DATA / "normalised"
     out.mkdir(parents=True, exist_ok=True)
     for split in splits:
+        outputs = [out / f"{split}_{s}.parquet" for s in SOURCES]
+        inputs = [RAW / split / f"{split}_{s}.tsv" for s in SOURCES]
+        if LEARNED_MAPS:
+            inputs.append(synonyms.PATH)
+        if is_fresh(outputs, inputs):
+            print(split, "normalised (cached)")
+            continue
         for s, df in load_sources(split).items():
             learned = synonyms.load("fit" if split == "train" else "all") if LEARNED_MAPS else None
             normalise_frame(df, learned).to_parquet(out / f"{split}_{s}.parquet", index=False)

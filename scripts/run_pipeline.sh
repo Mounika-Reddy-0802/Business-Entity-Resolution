@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # End to end: split -> normalise -> block -> features -> train -> decide -> validate.
+# Data stages (normalise, block, features) are skipped when their outputs are newer than their
+# inputs and every file under src/; FORCE=1 reruns them.
 # Decision rules are tuned on the fit side (validation held out); then, unless FULL=0, the model
 # is retrained on the whole training split before scoring test.
 set -e

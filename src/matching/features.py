@@ -16,7 +16,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from ..blocking.block import KEYS, rowwise_cos
 from ..blocking.normalise import load_normalised
-from ..common.io_utils import DATA, load_ground_truth
+from ..common.io_utils import DATA, RAW, SOURCES, is_fresh, load_ground_truth
 from ..common.split import side_of
 
 LANDMARK = {"nr", "opp", "bsd", "bhd"}
@@ -231,6 +231,18 @@ def build(split):
     return df
 
 
+def inputs_of(split):
+    """Files the feature table of a split is derived from."""
+    files = [DATA / "candidates" / f"{split}_candidates.parquet"]
+    files += [DATA / "normalised" / f"{split}_{s}.parquet" for s in SOURCES]
+    if split == "train":
+        files += [RAW / "train" / "train_ground_truth.tsv", DATA / "splits" / "val_s1_ids.txt"]
+    return files
+
+
 if __name__ == "__main__":
     for split in sys.argv[1:] or ("train", "test"):
+        if is_fresh([DATA / "features" / f"{split}_features.parquet"], inputs_of(split)):
+            print(split, "features (cached)")
+            continue
         print(split, build(split).shape)
