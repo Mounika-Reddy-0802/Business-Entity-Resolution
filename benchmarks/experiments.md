@@ -43,3 +43,4 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | 23:08 | krishna-2-005 | cc219a1+ | decision rules 1-7 tuned on oof, kept if val f0.5 rises | 0.9398 | 19.6823 | 0.9574 | 0.9710 | 0.9374 |  | no |  |
 | 23:14 | krishna-2-005 | 060723e | decision rules 1-7 tuned on oof, kept if val f0.5 rises | 0.9398 | 19.6823 | 0.9574 | 0.9710 | 0.9374 |  | no |  |
 | 23:57 | krishna-2-005 | 6f83874+ | tried: learning rate 0.1, max rounds 4000 (vs 0.05 capped at 2000) | 0.9398 | 19.6823 | 0.9574 | 0.9710 | 0.9375 |  | no |  |
+| 00:34 | krishna-2-005 | 00b5e54 | add address-pair key kaa (same address, any name), cap 20 by cap ranker | 0.9595 | 19.8520 |  |  |  |  | no |  |
