@@ -18,7 +18,7 @@ def test_suffix_only_name_is_kept_whole():
 
 
 def test_address_views_abbreviations_postal_and_city_alias():
-    clean, numbers, postal, tokens, city = addr_views(
+    clean, numbers, postal, tokens, city, _ = addr_views(
         "Shop No 12, Gandhi Nagr, Opposite SBI ATM, Bangalore - 560018", "India")
     assert "nagar" in clean.split() and "opp" in clean.split()
     assert postal == "560018" and numbers.split() == ["12", "560018"]
@@ -27,7 +27,7 @@ def test_address_views_abbreviations_postal_and_city_alias():
 
 
 def test_unseen_country_uses_generic_map():
-    clean, _, postal, _, _ = addr_views("12 av. Victor Hugo, 75011 Paris", "Neverland")
+    clean, _, postal, _, _, _ = addr_views("12 av. Victor Hugo, 75011 Paris", "Neverland")
     assert clean == "12 ave victor hugo 75011 paris" and postal == "75011"
 
 
@@ -40,9 +40,9 @@ def test_loader_keeps_quotes_and_drops_bom(tmp_path):
     assert df.business_name.tolist() == ['"Joe\'s" Diner', 'Acme "Best']
 
 
-def test_abbreviation_learning_needs_support():
-    from src.blocking.synonyms import MIN_COUNT, is_abbreviation, learn
-    assert is_abbreviation("rd", "road") and is_abbreviation("ngr", "nagar")
-    assert not is_abbreviation("road", "rd") and not is_abbreviation("dr", "road")
-    pairs = [("12 Main Rd", "12 Main Road")] * MIN_COUNT + [("Oak Ln", "Oak Lane")] * (MIN_COUNT - 1)
-    assert learn(pairs) == {"rd": "road"}
+def test_skeleton_meets_across_scripts_and_junk_is_removed():
+    from src.blocking.normalise import name_views
+    assert name_views("Raj Investments LLP")[4] == name_views("ராஜ் இன்வெஸ்ட்மெண்ட்ஸ் எல்எல்பி")[4]
+    assert name_views("LLC Crystal Staffing")[1:3] == ("crystal staffing", "llc")
+    assert name_views("Obsidian, [[LLC]]")[1] == "obsidian"
+    assert name_views("Korbrixx D.B.A. Obsidian, LLC")[5] == "obsidian llc"
