@@ -7,18 +7,28 @@ belong to S2/S3, no S2/S3 record matched to two S1 entities, share of empty name
 
     python -m src.common.check_inputs
 """
+import csv
 import sys
 from collections import Counter
 
-from .io_utils import RAW, data_is_synthetic, load_sources, load_tsv, parse_id_list
+import pandas as pd
+
+from .io_utils import RAW, SOURCES, data_is_synthetic, load_tsv, parse_id_list
 
 COLUMNS = ["entity_id", "business_name", "business_address", "country"]
 
 
-def check_split(split, src):
-    """(problems, facts) for one split's three source frames."""
-    problems, facts = [], {}
-    for s, df in src.items():
+def read_source(split, source):
+    """One source file with Arrow strings (millions of rows stay affordable)."""
+    return pd.read_csv(RAW / split / f"{split}_{source}.tsv", sep="\t", dtype="string[pyarrow]",
+                       keep_default_na=False, quoting=csv.QUOTE_NONE, encoding="utf-8-sig")
+
+
+def check_split(split):
+    """(problems, facts, countries, ids) for one split, one source file at a time."""
+    problems, facts, countries, ids = [], {}, set(), {}
+    for s in SOURCES:
+        df = read_source(split, s)
         prefix = "S" + s[-1] + "-"
         if list(df.columns) != COLUMNS:
             problems.append(f"{split}_{s}: columns {list(df.columns)} != {COLUMNS}")
@@ -33,15 +43,17 @@ def check_split(split, src):
             "rows": len(df), "countries": dict(Counter(df.country)),
             "empty_name": round(float((df.business_name.str.strip() == "").mean()), 4),
             "empty_address": round(float((df.business_address.str.strip() == "").mean()), 4)}
-    return problems, facts
+        countries |= set(df.country.unique())
+        ids[s] = set(df.entity_id) if split == "train" else None
+    return problems, facts, countries, ids
 
 
-def check_truth(train):
-    """Problems in train_ground_truth.tsv against the training sources."""
+def check_truth(ids):
+    """Problems in train_ground_truth.tsv against the training source ids."""
     problems = []
     gt = load_tsv(RAW / "train" / "train_ground_truth.tsv")
-    s1 = set(train["source1"].entity_id)
-    other = set(train["source2"].entity_id) | set(train["source3"].entity_id)
+    s1 = ids["source1"]
+    other = ids["source2"] | ids["source3"]
     missing_rows = s1 - set(gt.source1_entity_id)
     if missing_rows:
         problems.append(f"ground truth lacks {len(missing_rows)} S1 entities (treated as singletons)")
@@ -57,15 +69,15 @@ def check_truth(train):
 
 
 def main():
-    train, test = load_sources("train"), load_sources("test")
-    problems, facts = [], {}
-    for split, src in (("train", train), ("test", test)):
-        p, f = check_split(split, src)
+    problems, facts, found = [], {}, {}
+    for split in ("train", "test"):
+        p, f, found[split], ids = check_split(split)
         problems += p
         facts.update(f)
-    problems += check_truth(train)
-    train_c = {c for df in train.values() for c in df.country}
-    test_c = {c for df in test.values() for c in df.country}
+        if split == "train":
+            problems += check_truth(ids)
+            del ids
+    train_c, test_c = found["train"], found["test"]
     print("synthetic stand-in data" if data_is_synthetic() else "organiser data")
     for k, v in facts.items():
         print(f"{k}: {v}")

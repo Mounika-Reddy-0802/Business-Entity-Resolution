@@ -17,7 +17,7 @@ Keys:
   kt   one name skeleton token (>= 3 letters) + one address word: survives a typo in the others
   ka   an address number + one address word (renamed or DBA records)
 
-Writes s1_id, cand_id, kp, kn, knp, kt, ka, name_sim, addr_sim, cheap_score.
+Writes s1_id, cand_id, kp, kn, knp, kt, ka, name_sim, addr_sim, cheap_score (cap-ranker p).
 
     python -m src.blocking.block train test [--report [--log <tag> "<change>"]]
 """
@@ -26,12 +26,14 @@ import sys
 from itertools import combinations
 from multiprocessing import Pool
 
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from rapidfuzz import fuzz, process
 
 from ..common.evaluate import log_run
-from ..common.io_utils import DATA, SOURCES, is_fresh, load_ground_truth
+from ..common.io_utils import DATA, ROOT, SOURCES, is_fresh, load_ground_truth
+from ..common.split import load_split
 from .normalise import load_normalised, skeleton
 
 KEYS = ["kp", "kn", "knp", "kt", "ka"]
@@ -40,6 +42,8 @@ MAX_TOKENS = 4            # name tokens used for pair keys (first 4 in sorted or
 CAP = 40                  # final candidates per S1 entity
 REPORT_CAPS = (10, 20, 25, 40, 60, 80)
 S1_CHUNK = 250_000
+RANKER_SAMPLE = 20_000    # S1 entities whose uncapped pairs train the cap ranker
+RANKER = ROOT / "models" / "cap_ranker.txt"
 COLS = ["entity_id", "country", "name_skel", "name_alt", "addr_numbers", "addr_skel"]
 PART = 100_000
 WORKERS = 10
@@ -117,11 +121,12 @@ def spill_pairs(s1, other, tmp):
         del a, b, m
 
 
-def chunk_pairs(tmp, lo, hi):
-    """Pass 2 input: union of all kinds' pairs with lo <= idx1 < hi, one flag column per kind."""
+def chunk_pairs(tmp, filters):
+    """Pass 2 input: union of all kinds' pairs matching a pyarrow filter on idx1, one flag column
+    per kind."""
     parts = []
     for kind in KEYS:
-        m = pd.read_parquet(tmp / f"{kind}.parquet", filters=[("idx1", ">=", lo), ("idx1", "<", hi)])
+        m = pd.read_parquet(tmp / f"{kind}.parquet", filters=filters)
         parts.append(m.assign(kind=kind))
     allp = pd.concat(parts, ignore_index=True)
     allp["kind"] = pd.Categorical(allp.kind, categories=KEYS)
@@ -130,15 +135,39 @@ def chunk_pairs(tmp, lo, hi):
     return flags.groupby(["idx1", "idx2"], sort=False).max().reset_index()
 
 
-def cheap_scores(pairs, s1, other):
-    """Name and address skeleton similarity (0-1) for every pair, in C++ threads."""
-    n1 = s1.name_skel.to_numpy()[pairs.idx1.to_numpy()]
-    n2 = other.name_skel.to_numpy()[pairs.idx2.to_numpy()]
-    a1 = s1.addr_skel.to_numpy()[pairs.idx1.to_numpy()]
-    a2 = other.addr_skel.to_numpy()[pairs.idx2.to_numpy()]
-    name = process.cpdist(n1, n2, scorer=fuzz.token_set_ratio, workers=-1) / 100.0
-    addr = process.cpdist(a1, a2, scorer=fuzz.token_set_ratio, workers=-1) / 100.0
-    return name.astype(np.float32), addr.astype(np.float32)
+def cheap_features(pairs, s1, other):
+    """Fast ranking signals for every pair (C++ string scores, no Python loops)."""
+    i1, i2 = pairs.idx1.to_numpy(), pairs.idx2.to_numpy()
+    col = lambda df, c, i: df[c].to_numpy()[i]
+    n1, n2 = col(s1, "name_skel", i1), col(other, "name_skel", i2)
+    a1, a2 = col(s1, "addr_skel", i1), col(other, "addr_skel", i2)
+    d1, d2 = col(s1, "addr_numbers", i1), col(other, "addr_numbers", i2)
+    sim = lambda a, b, f: (process.cpdist(a, b, scorer=f, workers=-1) / 100.0).astype(np.float32)
+    f = pd.DataFrame({k: pairs[k].to_numpy(np.float32) for k in KEYS})
+    f["n_keys"] = f[KEYS].sum(axis=1)
+    f["name_sim"], f["name_ratio"] = sim(n1, n2, fuzz.token_set_ratio), sim(n1, n2, fuzz.ratio)
+    f["addr_sim"], f["num_sim"] = sim(a1, a2, fuzz.token_set_ratio), sim(d1, d2, fuzz.token_set_ratio)
+    f["addr_empty_1"] = (pd.Series(a1).str.len().to_numpy() == 0).astype(np.float32)
+    f["addr_empty_2"] = (pd.Series(a2).str.len().to_numpy() == 0).astype(np.float32)
+    return f
+
+
+def fit_ranker(tmp, s1, other, truth):
+    """Train the cap ranker on uncapped pairs of a fixed sample of fit-side S1 entities (the
+    validation side never informs the cap)."""
+    fit_pos = np.flatnonzero(~s1.entity_id.isin(load_split()).to_numpy())
+    rng = np.random.RandomState(42)
+    sample = np.sort(rng.choice(fit_pos, min(RANKER_SAMPLE, len(fit_pos)), replace=False)).astype(np.int32)
+    pairs = chunk_pairs(tmp, filters=[("idx1", "in", sample.tolist())])
+    f = cheap_features(pairs, s1, other)
+    y = pairs.merge(truth.assign(t=1), how="left", on=["idx1", "idx2"]).t.notna().to_numpy()
+    prm = {"objective": "binary", "learning_rate": 0.1, "num_leaves": 31, "min_child_samples": 50,
+           "seed": 42, "deterministic": True, "verbose": -1, "num_threads": 0}
+    model = lgb.train(prm, lgb.Dataset(f, y), 200)
+    RANKER.parent.mkdir(exist_ok=True)
+    model.save_model(str(RANKER))
+    print(f"  cap ranker: {len(f):,} pairs, {int(y.sum()):,} positives", flush=True)
+    return model
 
 
 def block(split, cap=CAP):
@@ -151,13 +180,16 @@ def block(split, cap=CAP):
     print(split, "keys", flush=True)
     spill_pairs(s1, other, tmp)
     truth = truth_index(s1, other) if split == "train" else None
+    ranker = fit_ranker(tmp, s1, other, truth) if truth is not None else lgb.Booster(model_file=str(RANKER))
     stats = {k: 0 for k in KEYS + ["union"] + [f"cap{c}" for c in REPORT_CAPS]}
     n_pairs = {k: 0 for k in stats}
     kept = []
     for lo in range(0, len(s1), S1_CHUNK):
-        pairs = chunk_pairs(tmp, lo, lo + S1_CHUNK)
-        pairs["name_sim"], pairs["addr_sim"] = cheap_scores(pairs, s1, other)
-        pairs["cheap_score"] = pairs.name_sim + 0.5 * pairs.addr_sim + 0.05 * pairs[KEYS].sum(axis=1)
+        pairs = chunk_pairs(tmp, [("idx1", ">=", lo), ("idx1", "<", lo + S1_CHUNK)])
+        f = cheap_features(pairs, s1, other)
+        pairs["name_sim"], pairs["addr_sim"] = f.name_sim.to_numpy(), f.addr_sim.to_numpy()
+        pairs["cheap_score"] = ranker.predict(f).astype(np.float32)
+        del f
         rank = pairs.groupby("idx1").cheap_score.rank(method="first", ascending=False)
         if truth is not None:
             is_hit = pd.Series(pairs.merge(truth.assign(t=1), how="left", on=["idx1", "idx2"])

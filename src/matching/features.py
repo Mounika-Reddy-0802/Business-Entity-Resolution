@@ -195,21 +195,24 @@ def _chunk(args):
 
 
 def competition(df, cols):
-    """Context features over the whole candidate table: rank, gap and margin of a pair among the
-    candidates of its S1 entity, and the best score its S2/S3 record reaches with any other S1."""
-    g1, g2 = df.groupby("s1_id", sort=False), df.groupby("cand_id", sort=False)
+    """Context features over a candidate table: rank, gap and margin of a pair among the candidates
+    of its S1 entity, and the best score its S2/S3 record reaches with any other S1 entity.
+    Groups by integer codes, so tens of millions of rows fit in memory."""
+    k1 = pd.factorize(df.s1_id)[0]
+    k2 = pd.factorize(df.cand_id)[0]
+    g1, g2 = df.groupby(k1, sort=False), df.groupby(k2, sort=False)
     out = pd.DataFrame(index=df.index)
-    out["n_cands_s1"] = g1["cand_id"].transform("size").astype(np.float32)
-    out["n_s1_for_cand"] = g2["s1_id"].transform("size").astype(np.float32)
+    out["n_cands_s1"] = g1[cols[0]].transform("size").astype(np.float32)
+    out["n_s1_for_cand"] = g2[cols[0]].transform("size").astype(np.float32)
     for c in cols:
-        v = df[c]
-        best = g1[c].transform("max")
+        v = df[c].to_numpy()
+        best = g1[c].transform("max").to_numpy()
         out[f"{c}_rank_s1"] = g1[c].rank(ascending=False, method="min").astype(np.float32)
         out[f"{c}_gap_s1"] = (best - v).astype(np.float32)
-        second = second_largest(v, df.s1_id)
+        second = second_largest(v, k1)
         out[f"{c}_margin_s1"] = np.where(v >= best, v - second, v - best).astype(np.float32)
-        top1 = g2[c].transform("max")
-        other_best = np.where(v >= top1, second_largest(v, df.cand_id), top1)
+        top1 = g2[c].transform("max").to_numpy()
+        other_best = np.where(v >= top1, second_largest(v, k2), top1)
         out[f"{c}_other_s1_best"] = other_best.astype(np.float32)
         out[f"{c}_margin_cand"] = (v - other_best).astype(np.float32)
         out[f"{c}_rank_cand"] = g2[c].rank(ascending=False, method="min").astype(np.float32)
@@ -227,41 +230,64 @@ def train_sample():
     return {**{s: "fit" for s in fit}, **{s: "val" for s in val}}
 
 
+def load_country(split, country):
+    """Normalised text views of one country: (S1 frame, S2/S3 frame), indexed by entity_id."""
+    cols = ["entity_id"] + TEXT
+    read = lambda src: pd.read_parquet(DATA / "normalised" / f"{split}_{src}.parquet", columns=cols,
+                                       filters=[("country", "==", country)], dtype_backend="pyarrow")
+    s1 = read("source1").set_index("entity_id")
+    other = pd.concat([read("source2"), read("source3")]).set_index("entity_id")
+    return s1, other
+
+
 def build(split):
-    """Features for one split, written as parts; returns the number of rows."""
-    cands = pd.read_parquet(DATA / "candidates" / f"{split}_candidates.parquet")
-    comp = competition(cands, ["name_sim", "addr_sim", "cheap_score"])
-    base = pd.concat([cands, comp], axis=1)
-    del comp
+    """Features for one split, one country at a time (keys never cross countries), written as
+    parts; returns the number of rows."""
+    cands = pd.read_parquet(DATA / "candidates" / f"{split}_candidates.parquet", dtype_backend="pyarrow")
     for k in KEYS:
-        base[k] = base[k].astype(np.float32)
-    if split == "train":
-        side = train_sample()
-        base = base[base.s1_id.isin(side.keys())].reset_index(drop=True)
-        base["side"] = base.s1_id.map(side)
+        cands[k] = cands[k].astype(np.float32)
+    for c in ("name_sim", "addr_sim", "cheap_score"):
+        cands[c] = cands[c].astype(np.float32)
+    s1c = pd.read_parquet(DATA / "normalised" / f"{split}_source1.parquet", columns=["entity_id", "country"])
+    country = cands.s1_id.map(pd.Series(s1c.country.to_numpy(), index=s1c.entity_id.to_numpy()))
+    side = train_sample() if split == "train" else None
+    truth = None
+    if side is not None:
         truth = pd.DataFrame([(s, m) for s, ms in load_ground_truth().items() if s in side for m in ms],
                              columns=["s1_id", "cand_id"]).assign(label=1)
-        base = base.merge(truth, on=["s1_id", "cand_id"], how="left")
-        base["label"] = base.label.fillna(0).astype(np.int8)
-    src = load_normalised(split, ["entity_id"] + TEXT)
-    s1 = src["source1"].set_index("entity_id")
-    other = pd.concat([src["source2"], src["source3"]]).set_index("entity_id")
-    idf = {"name": idf_table(pd.concat([s1.name_skel, other.name_skel])),
-           "addr": idf_table(pd.concat([s1.addr_skel, other.addr_skel]))}
     out = DATA / "features" / split
     out.mkdir(parents=True, exist_ok=True)
     for old in out.glob("part_*.parquet"):
         old.unlink()
-    ids = base.s1_id.unique()
-    with Pool(WORKERS, initializer=_init, initargs=(idf,)) as pool:
-        for p, start in enumerate(range(0, len(ids), PART_S1)):
-            part = base[base.s1_id.isin(ids[start:start + PART_S1])].reset_index(drop=True)
-            A, B = s1.loc[part.s1_id], other.loc[part.cand_id]
-            tasks = [(A.iloc[i:i + CHUNK], B.iloc[i:i + CHUNK]) for i in range(0, len(part), CHUNK)]
-            feats = pd.concat(pool.map(_chunk, tasks), ignore_index=True)
-            pd.concat([part, feats], axis=1).to_parquet(out / f"part_{p:04d}.parquet", index=False)
-            print(f"  {split} part {p}: {len(part):,} pairs", flush=True)
-    return len(base)
+    total = 0
+    for ci, cname in enumerate(sorted(country.dropna().unique())):
+        sub = cands[(country == cname).to_numpy()]
+        if side is not None:                  # every row of every candidate a sampled S1 lists
+            listed = sub.cand_id[sub.s1_id.isin(side.keys())].unique()
+            sub = sub[sub.cand_id.isin(listed)]
+        sub = sub.reset_index(drop=True)
+        base = pd.concat([sub, competition(sub, ["cheap_score", "name_sim"])], axis=1)
+        del sub
+        if side is not None:
+            base = base[base.s1_id.isin(side.keys())].reset_index(drop=True)
+            base["side"] = base.s1_id.map(side)
+            base = base.merge(truth, on=["s1_id", "cand_id"], how="left")
+            base["label"] = base.label.fillna(0).astype(np.int8)
+        s1, other = load_country(split, cname)
+        idf = {"name": idf_table(pd.concat([s1.name_skel, other.name_skel])),
+               "addr": idf_table(pd.concat([s1.addr_skel, other.addr_skel]))}
+        ids = base.s1_id.unique()
+        with Pool(WORKERS, initializer=_init, initargs=(idf,)) as pool:
+            for p, start in enumerate(range(0, len(ids), PART_S1)):
+                part = base[base.s1_id.isin(ids[start:start + PART_S1])].reset_index(drop=True)
+                A, B = s1.loc[part.s1_id].astype(object), other.loc[part.cand_id].astype(object)
+                tasks = [(A.iloc[i:i + CHUNK], B.iloc[i:i + CHUNK]) for i in range(0, len(part), CHUNK)]
+                feats = pd.concat(pool.map(_chunk, tasks), ignore_index=True)
+                pd.concat([part, feats], axis=1).to_parquet(out / f"part_{ci}{p:03d}.parquet", index=False)
+                print(f"  {split} {cname} part {p}: {len(part):,} pairs", flush=True)
+        total += len(base)
+        del base, s1, other
+    return total
 
 
 def load_features(split, columns=None):

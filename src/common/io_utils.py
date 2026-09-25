@@ -42,18 +42,6 @@ def load_ground_truth():
     return {r.source1_entity_id: parse_id_list(r.matched_entity_ids) for r in df.itertuples()}
 
 
-def write_id_list_tsv(mapping, s1_ids, path, column):
-    """Write one row per s1 id in s1_ids order. mapping: {s1_id: iterable of ids}.
-    column is 'matched_entity_ids' or 'candidate_entity_ids'. Duplicates are removed,
-    order preserved, S1 ids dropped defensively."""
-    rows = []
-    for s in s1_ids:
-        ids = [i for i in dict.fromkeys(mapping.get(s, [])) if not i.startswith("S1-")]
-        rows.append((s, ",".join(ids)))
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(rows, columns=["source1_entity_id", column]).to_csv(path, sep="\t", index=False)
-
-
 def read_id_list_tsv(path, column):
     df = load_tsv(path)
     return {r.source1_entity_id: parse_id_list(getattr(r, column)) for r in df.itertuples()}
@@ -76,3 +64,13 @@ def is_fresh(outputs, inputs, code=None):
     code_files = [src / c for c in code] if code else list(src.rglob("*.py"))
     newest_in = max(p.stat().st_mtime for p in inputs + code_files)
     return min(p.stat().st_mtime for p in outputs) > newest_in
+
+
+def write_pairs_tsv(pairs, s1_ids, path, column, id_col="cand_id"):
+    """Vectorised writer for large outputs: one row per S1 id in s1_ids order, its ids from the
+    (s1_id, id_col) pair frame joined with commas (empty when it has none). Pairs must be unique."""
+    lists = pairs.groupby("s1_id", sort=False)[id_col].agg(",".join)
+    out = pd.DataFrame({"source1_entity_id": list(s1_ids)})
+    out[column] = out.source1_entity_id.map(lists).fillna("")
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    out.to_csv(path, sep="\t", index=False)

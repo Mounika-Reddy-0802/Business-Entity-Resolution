@@ -44,3 +44,12 @@ def test_second_largest_per_group():
     from src.matching.ranking import second_largest
     got = second_largest([0.2, 0.9, 0.5, 0.7, 0.1], ["a", "a", "a", "b", "c"])
     assert list(got) == [0.5, 0.5, 0.5, 0.0, 0.0]
+
+
+def test_write_pairs_tsv_keeps_order_and_empty_rows(tmp_path):
+    from src.common.io_utils import read_id_list_tsv, write_pairs_tsv
+    pairs = pd.DataFrame({"s1_id": ["S1-2", "S1-1", "S1-2"], "cand_id": ["S2-9", "S3-1", "S3-4"]})
+    path = tmp_path / "m.tsv"
+    write_pairs_tsv(pairs, ["S1-1", "S1-2", "S1-3"], path, "matched_entity_ids")
+    assert path.read_text().splitlines()[0] == "source1_entity_id\tmatched_entity_ids"
+    assert read_id_list_tsv(path, "matched_entity_ids") == {"S1-1": ["S3-1"], "S1-2": ["S2-9", "S3-4"], "S1-3": []}

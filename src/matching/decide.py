@@ -6,7 +6,7 @@ Rules, applied in this order when enabled in the config:
   4    one-to-one: an S2/S3 record goes only to the S1 entity where it scores highest
   5    cardinality caps: at most cap_s2 / cap_s3 matches per S1 entity
   6    singleton guard: empty list when the best p of the S1 entity is below t_single
-  7    sanity: candidate ids only, no S1 ids, no duplicates (write_id_list_tsv + check_submission)
+  7    sanity: candidate ids only, no S1 ids, no duplicates (write_pairs_tsv + check_submission)
 
     python -m src.matching.decide sweep [--log]   # tune rules on OOF, keep those that lift val F0.5
     python -m src.matching.decide test [--log <tag> "<change>"]   # apply models/decision.json
@@ -19,7 +19,7 @@ import pandas as pd
 
 from ..blocking.normalise import load_normalised
 from ..common.evaluate import blocking_recall, log_run, macro_f05, per_group_f05
-from ..common.io_utils import DATA, OUTPUT, ROOT, load_ground_truth, pairs_to_map, write_id_list_tsv
+from ..common.io_utils import DATA, OUTPUT, ROOT, load_ground_truth, pairs_to_map, write_pairs_tsv
 from ..common.split import load_split
 
 CONFIG = ROOT / "models" / "decision.json"
@@ -149,9 +149,8 @@ def write_test(cfg=None):
     cfg = cfg or load_config()
     scores = pd.read_parquet(DATA / "scores" / "test_scores.parquet")
     s1_ids = list(load_normalised("test", ["entity_id"])["source1"].entity_id)
-    write_id_list_tsv(pairs_to_map(apply(scores, cfg)), s1_ids, OUTPUT / "matching_results.tsv",
-                      "matched_entity_ids")
-    write_id_list_tsv(pairs_to_map(scores), s1_ids, OUTPUT / "candidate_pairs.tsv", "candidate_entity_ids")
+    write_pairs_tsv(apply(scores, cfg), s1_ids, OUTPUT / "matching_results.tsv", "matched_entity_ids")
+    write_pairs_tsv(scores, s1_ids, OUTPUT / "candidate_pairs.tsv", "candidate_entity_ids")
 
 
 if __name__ == "__main__":
