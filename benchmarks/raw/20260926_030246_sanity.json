@@ -1,0 +1,63 @@
+{
+  "problems": [],
+  "train_truth": {
+    "India": {
+      "n": 883188,
+      "mean": 3.465,
+      "share_0": 0.056,
+      "share_1": 0.054,
+      "share_2": 0.17,
+      "share_3plus": 0.721
+    },
+    "US": {
+      "n": 1323633,
+      "mean": 3.459,
+      "share_0": 0.056,
+      "share_1": 0.054,
+      "share_2": 0.17,
+      "share_3plus": 0.72
+    },
+    "all": {
+      "n": 2206821,
+      "mean": 3.461,
+      "share_0": 0.056,
+      "share_1": 0.054,
+      "share_2": 0.17,
+      "share_3plus": 0.72
+    }
+  },
+  "test_predicted": {
+    "France": {
+      "n": 259452,
+      "mean": 3.389,
+      "share_0": 0.05,
+      "share_1": 0.076,
+      "share_2": 0.176,
+      "share_3plus": 0.697
+    },
+    "India": {
+      "n": 809986,
+      "mean": 3.137,
+      "share_0": 0.067,
+      "share_1": 0.092,
+      "share_2": 0.2,
+      "share_3plus": 0.642
+    },
+    "US": {
+      "n": 663106,
+      "mean": 3.305,
+      "share_0": 0.059,
+      "share_1": 0.07,
+      "share_2": 0.186,
+      "share_3plus": 0.685
+    },
+    "all": {
+      "n": 1732544,
+      "mean": 3.239,
+      "share_0": 0.061,
+      "share_1": 0.081,
+      "share_2": 0.191,
+      "share_3plus": 0.667
+    }
+  }
+}

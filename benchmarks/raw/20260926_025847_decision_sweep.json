@@ -1,0 +1,98 @@
+{
+  "time": "2026-09-26 02:58",
+  "tag": "decision_sweep",
+  "change": "decision rules 1-7 tuned on oof, kept if val f0.5 rises",
+  "who": "lahari-66",
+  "commit": "6e33511+",
+  "synthetic_data": false,
+  "f05": 0.9656234083348941,
+  "f05_US": 0.9757174229828955,
+  "f05_India": 0.9507651784674422,
+  "f05_matched": 0.965442851599302,
+  "f05_singleton": 0.9687029792356304,
+  "block_recall": 0.9588645101610153,
+  "cands_per_s1": 19.8467,
+  "decision": {
+    "t_s2": 0.725,
+    "t_s3": 0.7,
+    "alpha": 0.75,
+    "one_to_one": true,
+    "cap_s2": 5,
+    "cap_s3": 5,
+    "t_single": 0.0
+  },
+  "sweep": [
+    {
+      "rule": "t=0.5",
+      "cfg": {
+        "t_s2": 0.5,
+        "t_s3": 0.5,
+        "alpha": 0.0,
+        "one_to_one": true,
+        "cap_s2": 0,
+        "cap_s3": 0,
+        "t_single": 0.0
+      },
+      "oof": 0.9637139861784189,
+      "val": 0.9629367171912327
+    },
+    {
+      "rule": "1 global threshold",
+      "tuned": {
+        "t_s2": 0.725,
+        "t_s3": 0.725
+      },
+      "oof": 0.9664023033864044,
+      "val_before": 0.9629367171912327,
+      "val_after": 0.9655666299481289,
+      "delta": 0.002629912756896169,
+      "kept": true
+    },
+    {
+      "rule": "2 per-source thresholds",
+      "tuned": {
+        "t_s2": 0.725,
+        "t_s3": 0.7
+      },
+      "oof": 0.9664084713437575,
+      "val_before": 0.9655666299481289,
+      "val_after": 0.9655860248084699,
+      "delta": 1.9394860340971043e-05,
+      "kept": true
+    },
+    {
+      "rule": "3 relative alpha",
+      "tuned": {
+        "alpha": 0.75
+      },
+      "oof": 0.9664153590107497,
+      "val_before": 0.9655860248084699,
+      "val_after": 0.9656177039443743,
+      "delta": 3.167913590440552e-05,
+      "kept": true
+    },
+    {
+      "rule": "5 cardinality caps",
+      "tuned": {
+        "cap_s2": 5,
+        "cap_s3": 5
+      },
+      "oof": 0.966409386482623,
+      "val_before": 0.9656177039443743,
+      "val_after": 0.9656234083348995,
+      "delta": 5.704390525163028e-06,
+      "kept": true
+    },
+    {
+      "rule": "6 singleton guard",
+      "tuned": {
+        "t_single": 0.72
+      },
+      "oof": 0.9664249420381785,
+      "val_before": 0.9656234083348995,
+      "val_after": 0.9655974824089737,
+      "delta": -2.5925925925762705e-05,
+      "kept": false
+    }
+  ]
+}

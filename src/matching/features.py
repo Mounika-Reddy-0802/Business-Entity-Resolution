@@ -11,6 +11,7 @@ whole candidate table; the string features are computed in parallel chunks and w
     python -m src.matching.features train test
 """
 import os
+import re
 import sys
 from collections import Counter
 from multiprocessing import Pool
@@ -31,7 +32,7 @@ PART_S1 = 25_000                  # S1 entities per output part (keeps Python st
 CHUNK = 100_000                   # pairs per worker task
 WORKERS = 10
 LANDMARK = {"nr", "opp", "bsd", "bhd"}
-TEXT = ["name_clean", "name_core", "legal_suffix", "name_tokens", "name_skel", "name_alt",
+TEXT = ["business_name", "name_clean", "name_core", "legal_suffix", "name_tokens", "name_skel", "name_alt",
         "addr_clean", "addr_numbers", "postal_code", "addr_tokens", "city_guess", "addr_skel"]
 _IDF = {}
 CODE = ["matching/features.py", "matching/ranking.py", "blocking/block.py", "common/split.py"]
@@ -124,6 +125,21 @@ def token_in(a_tokens, b_text):
     return out
 
 
+NON_LATIN = re.compile(r"[^\W\d_A-Za-zÀ-ɏ]")
+LETTER = re.compile(r"[^\W\d_]")
+
+
+def script_share(names):
+    """Share of letters outside the Latin script (Devanagari, Tamil, ...) in each raw name: a
+    transliterated name is expected to differ from its Latin spelling more than a typo does."""
+    out = np.zeros(len(names), dtype=np.float32)
+    for i, n in enumerate(names):
+        letters = len(LETTER.findall(n))
+        if letters:
+            out[i] = len(NON_LATIN.findall(n)) / letters
+    return out
+
+
 def length_ratio(a, b):
     la = np.fromiter((len(x) for x in a), dtype=np.float32, count=len(a))
     lb = np.fromiter((len(x) for x in b), dtype=np.float32, count=len(b))
@@ -158,6 +174,9 @@ def string_features(A, B):
     f["name_ntok_1"] = A.name_tokens.str.count(" ").to_numpy(dtype=np.float32) + (A.name_tokens != "").to_numpy()
     f["name_ntok_2"] = B.name_tokens.str.count(" ").to_numpy(dtype=np.float32) + (B.name_tokens != "").to_numpy()
     f["name_len_ratio"] = length_ratio(nc1, nc2)
+    f["script_1"] = script_share(A.business_name.to_numpy())
+    f["script_2"] = script_share(B.business_name.to_numpy())
+    f["script_diff"] = np.abs(f["script_1"] - f["script_2"])
 
     ac1, ac2 = A.addr_clean.to_numpy(), B.addr_clean.to_numpy()
     f["addr_ratio"] = sim(ac1, ac2, fuzz.ratio)
