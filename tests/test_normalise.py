@@ -38,3 +38,11 @@ def test_loader_keeps_quotes_and_drops_bom(tmp_path):
     df = load_tsv(path)
     assert list(df.columns) == ["entity_id", "business_name"]
     assert df.business_name.tolist() == ['"Joe\'s" Diner', 'Acme "Best']
+
+
+def test_abbreviation_learning_needs_support():
+    from src.blocking.synonyms import MIN_COUNT, is_abbreviation, learn
+    assert is_abbreviation("rd", "road") and is_abbreviation("ngr", "nagar")
+    assert not is_abbreviation("road", "rd") and not is_abbreviation("dr", "road")
+    pairs = [("12 Main Rd", "12 Main Road")] * MIN_COUNT + [("Oak Ln", "Oak Lane")] * (MIN_COUNT - 1)
+    assert learn(pairs) == {"rd": "road"}

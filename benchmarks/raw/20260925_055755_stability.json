@@ -1,0 +1,26 @@
+{
+  "time": "2026-09-25 05:57",
+  "tag": "stability",
+  "change": "tried: learned abbreviation maps, 5 lightgbm seeds, fixed split: mean val f0.5, std 0.0014 (vs 0.9831 without; not kept)",
+  "who": "Rayyan-Mohammed",
+  "commit": "5dd63bc+",
+  "synthetic_data": true,
+  "f05": 0.9836872691464024,
+  "f05_std": 0.0013533384637659542,
+  "f05_min": 0.982304875314744,
+  "f05_max": 0.9851710820247006,
+  "seeds": [
+    42,
+    7,
+    123,
+    2024,
+    99
+  ],
+  "per_seed": [
+    0.9825978774514961,
+    0.9851710820247006,
+    0.982304875314744,
+    0.985058343660124,
+    0.9833041672809477
+  ]
+}
