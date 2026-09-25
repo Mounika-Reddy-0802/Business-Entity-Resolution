@@ -38,8 +38,10 @@ def make_split(seed=SEED, val_fraction=VAL_FRACTION):
             elif rng.random() < val_fraction:
                 val_other.add(eid)
     SPLIT_DIR.mkdir(parents=True, exist_ok=True)
-    (SPLIT_DIR / "val_s1_ids.txt").write_text("\n".join(sorted(val_s1)) + "\n")
-    (SPLIT_DIR / "val_other_ids.txt").write_text("\n".join(sorted(val_other)) + "\n")
+    for name, ids in (("val_s1_ids.txt", val_s1), ("val_other_ids.txt", val_other)):
+        path, text = SPLIT_DIR / name, "\n".join(sorted(ids)) + "\n"
+        if not path.exists() or path.read_text() != text:    # unchanged files keep their mtime
+            path.write_text(text)
     return val_s1, val_other
 
 

@@ -28,6 +28,9 @@ bash scripts/run_pipeline.sh
 | format checks and pre-upload sanity report | `utils/validate_submission.py`, `src/common/check_submission.py`, `src/matching/sanity.py` | `benchmarks/raw/` |
 
 A full run takes about 3.5 minutes on 10k training S1 entities (about 10 minutes at 4x that size).
+Release: `python -m src.common.release archive <n> [--lb <score>]` after each upload
+(keeps `benchmarks/raw/submission_<n>.tsv.gz`), `python -m src.common.release package <team>` for
+the final zip; both refuse synthetic data and rerun the validators.
 Tools: `python -m src.common.eda` (dataset facts to `docs/eda.md`),
 `python -m src.matching.cross_country` (train one country, score the other),
 `python -m src.matching.errors` (worst validation entities), `pytest -q tests`.
