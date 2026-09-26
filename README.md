@@ -23,7 +23,7 @@ features ~45 min, training ~20 min). Stages cache their outputs, so reruns skip 
 | fixed 20% validation split of S1 (seed 42), stratified by country and singleton | `src/common/split.py` | `data/splits/` |
 | normalisation: transliteration, skeleton, junk/suffix clean-up | `src/blocking/normalise.py` | `data/normalised/` |
 | blocking: name+location hash keys, learned cap ranker, top 20 per S1 | `src/blocking/block.py` | `data/candidates/` |
-| 68 pair features incl. competition features, per country, in parts | `src/matching/features.py` | `data/features/` |
+| 65+ pair features incl. competition features, per country, in parts | `src/matching/features.py` | `data/features/` |
 | LightGBM, 5-fold GroupKFold by S1 entity on a 200k-entity sample | `src/matching/train_lgbm.py` | `models/`, `data/scores/` |
 | decision rules tuned on OOF, accepted on validation; one-to-one | `src/matching/decide.py` | `models/decision.json`, `output/` |
 | organiser validator, local checks, per-country sanity report | `utils/`, `src/common/check_submission.py`, `src/matching/sanity.py` | `benchmarks/raw/` |

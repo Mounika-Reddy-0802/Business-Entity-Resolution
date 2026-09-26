@@ -5,7 +5,7 @@ Package"). Both commands refuse to run on the synthetic stand-in data.
         output/matching_results.tsv -> benchmarks/raw/submission_<n>.tsv.gz, plus a row in
         benchmarks/experiments.md marked uploaded. Run right after uploading submission n.
 
-    python -m src.common.release package <team_name>
+    python -m src.common.release package <team_name> [--from data/submissions/subN]
         <team_name>_submission.zip with
           output/{matching_results.tsv, candidate_pairs.tsv}
           code/business_entity_resolution/{src/, scripts/, README.md, requirements.txt}
@@ -36,10 +36,10 @@ def refuse_synthetic():
         sys.exit("refusing: data/raw/dataset holds the synthetic stand-in (docs/problems.md)")
 
 
-def validate():
+def validate(out_dir=OUTPUT):
     """Run the organiser validator when present, and the local check; stop on failure."""
-    args = ["--matching", str(OUTPUT / "matching_results.tsv"), "--candidate",
-            str(OUTPUT / "candidate_pairs.tsv"), "--test-dir", str(RAW / "test")]
+    args = ["--matching", str(out_dir / "matching_results.tsv"), "--candidate",
+            str(out_dir / "candidate_pairs.tsv"), "--test-dir", str(RAW / "test")]
     organiser = ROOT / "utils" / "validate_submission.py"
     cmds = ([[sys.executable, str(organiser), *args]] if organiser.exists() else []) + \
         [[sys.executable, "-m", "src.common.check_submission", *args]]
@@ -62,15 +62,16 @@ def archive(n, lb=None):
                   {"uploaded": True, "lb": lb}))
 
 
-def package(team):
-    """Build <team>_submission.zip in the repo root with the organiser's layout."""
+def package(team, out_dir=OUTPUT):
+    """Build <team>_submission.zip in the repo root with the organiser's layout; out_dir holds the
+    two uploaded TSVs (default output/)."""
     refuse_synthetic()
-    validate()
+    validate(out_dir)
     path = ROOT / f"{team}_submission.zip"
     code = "code/business_entity_resolution"
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
         for name in ("matching_results.tsv", "candidate_pairs.tsv"):
-            z.write(OUTPUT / name, f"output/{name}")
+            z.write(out_dir / name, f"output/{name}")
         for d in CODE_DIRS:
             for f in sorted((ROOT / d).rglob("*")):
                 if packaged(f):
@@ -93,6 +94,7 @@ if __name__ == "__main__":
         lb = float(sys.argv[sys.argv.index("--lb") + 1]) if "--lb" in sys.argv else None
         archive(int(sys.argv[2]), lb)
     elif cmd == "package" and len(sys.argv) > 2:
-        package(sys.argv[2])
+        out = sys.argv[sys.argv.index("--from") + 1] if "--from" in sys.argv else None
+        package(sys.argv[2], ROOT / out if out else OUTPUT)
     else:
         sys.exit(__doc__)

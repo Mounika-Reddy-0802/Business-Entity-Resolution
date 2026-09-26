@@ -74,12 +74,12 @@ removed, repeats collapsed): "Raj Investments" and "ராஜ் இன்வெ
 
 ## 4. Matching Model
 
-**Features used (68):**
+**Features used (65 in the submitted model):**
 - Name features: Jaro-Winkler, Levenshtein ratio, token-set/sort, partial ratio on the core
   name; ratio, token-set, partial and Jaccard on the skeleton; best token-set including the DBA
   name; token Jaccard, IDF-weighted Jaccard and cosine, rarest shared token IDF, common prefix,
-  first-token equality, acronym match, legal-suffix state, token counts, length ratio; share of
-  non-Latin letters in each name and their difference.
+  first-token equality, acronym match, legal-suffix state, token counts, length ratio. (Share of
+  non-Latin letters per name was tested later: 0.9656 vs 0.9655, within noise.)
 - Address features: ratio, token-set/sort, partial on the clean address; token-set on the address
   skeleton; token and IDF Jaccard/cosine, number Jaccard, house-number state and containment,
   postal state, city overlap, length ratio, landmark flag, empty-address flags; name tokens found
