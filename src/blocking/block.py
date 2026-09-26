@@ -44,7 +44,7 @@ from ..common.split import load_split
 from .normalise import load_normalised, skeleton
 
 KEYS = ["kp", "kn", "knp", "kt", "ka", "kaa"]
-MAX_BLOCK = {"kp": 150, "kn": 60, "knp": 60, "kt": 60, "ka": 60, "kaa": 60}
+MAX_BLOCK = {"kp": 150, "kn": 60, "knp": 60, "kt": 100, "ka": 100, "kaa": 100}
 MAX_TOKENS = 4            # name tokens used for pair keys (first 4 in sorted order: <= 6 pairs)
 CAP = 20                  # final candidates per S1 entity (recall 0.9409 vs 0.9417 at 40)
 REPORT_CAPS = (10, 20, 25, 40, 60, 80)
