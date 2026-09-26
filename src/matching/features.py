@@ -18,6 +18,8 @@ from multiprocessing import Pool
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.compute as pc
 from rapidfuzz import fuzz, process
 from rapidfuzz.distance import JaroWinkler
 
@@ -268,7 +270,9 @@ def build(split):
     for c in ("name_sim", "addr_sim", "cheap_score"):
         cands[c] = cands[c].astype(np.float32)
     s1c = pd.read_parquet(DATA / "normalised" / f"{split}_source1.parquet", columns=["entity_id", "country"])
-    country = cands.s1_id.map(pd.Series(s1c.country.to_numpy(), index=s1c.entity_id.to_numpy()))
+    names, codes = np.unique(s1c.country.to_numpy(dtype=object), return_inverse=True)
+    pos = pc.index_in(pa.array(cands.s1_id.array), value_set=pa.array(s1c.entity_id.to_numpy(dtype=object)))
+    ccode = codes.astype(np.int16)[pos.to_numpy(zero_copy_only=False)]   # C++ lookup, no Python strings
     side = train_sample() if split == "train" else None
     truth = None
     if side is not None:
@@ -279,8 +283,8 @@ def build(split):
     for old in out.glob("part_*.parquet"):
         old.unlink()
     total = 0
-    for ci, cname in enumerate(sorted(country.dropna().unique())):
-        sub = cands[(country == cname).to_numpy()]
+    for ci, cname in enumerate(names):
+        sub = cands[ccode == ci]
         if side is not None:                  # every row of every candidate a sampled S1 lists
             listed = sub.cand_id[sub.s1_id.isin(side.keys())].unique()
             sub = sub[sub.cand_id.isin(listed)]

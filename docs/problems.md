@@ -34,3 +34,13 @@ Add an entry the moment you lose time to something: symptom, cause, fix, what it
 - Fix: quote `"$PY"` on every call. The clean clone then reproduced val F0.5 0.9842 and
   byte-identical `output/*.tsv`.
 - Cost: 5 minutes.
+
+## 2026-09-26 07:24 IST — disk full during test features (page file growth)
+- Symptom: `OSError: [Errno 28] No space left on device` while writing test feature parts; free
+  space on C: fell from 17 GB to 3 GB within minutes and came back when the process was stopped.
+- Cause: the per-row country lookup `cands.s1_id.map(...)` turned 34M Arrow strings into Python
+  objects; the process spilled to the Windows page file, which grew until the disk was full (the
+  drive is ~97% used by other data).
+- Fix: country codes via Arrow's C++ `index_in` (integer codes, no Python strings); a resource
+  logger (`data/resources.log`) records free disk and RAM every 5 minutes during long runs.
+- Cost: ~40 minutes and one restart of the v4 chain.
