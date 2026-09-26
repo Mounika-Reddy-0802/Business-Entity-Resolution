@@ -1,7 +1,7 @@
 """Upload bookkeeping and the final package (GIT_RULES.md §5, problem statement "Final Submission
 Package"). Both commands refuse to run on the synthetic stand-in data.
 
-    python -m src.common.release archive <n> [--lb <score>]
+    python -m src.common.release archive <n> [--lb <score>] [--from data/submissions/subN]
         output/matching_results.tsv -> benchmarks/raw/submission_<n>.tsv.gz, plus a row in
         benchmarks/experiments.md marked uploaded. Run right after uploading submission n.
 
@@ -48,14 +48,14 @@ def validate(out_dir=OUTPUT):
             sys.exit("refusing: validation failed")
 
 
-def archive(n, lb=None):
+def archive(n, lb=None, out_dir=OUTPUT):
     """Keep an uploaded submission so it can be audited and regenerated."""
     refuse_synthetic()
-    validate()
+    validate(out_dir)
     dest = ROOT / "benchmarks" / "raw" / f"submission_{n}.tsv.gz"
     if dest.exists():
         sys.exit(f"refusing: {dest.name} already exists")
-    with open(OUTPUT / "matching_results.tsv", "rb") as src, gzip.open(dest, "wb") as out:
+    with open(out_dir / "matching_results.tsv", "rb") as src, gzip.open(dest, "wb") as out:
         shutil.copyfileobj(src, out)
     print(dest)
     print(log_run(f"submission_{n}", f"uploaded submission {n} (commit {git_commit()})",
@@ -90,11 +90,11 @@ def package(team, out_dir=OUTPUT):
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
+    out = ROOT / sys.argv[sys.argv.index("--from") + 1] if "--from" in sys.argv else OUTPUT
     if cmd == "archive" and len(sys.argv) > 2:
         lb = float(sys.argv[sys.argv.index("--lb") + 1]) if "--lb" in sys.argv else None
-        archive(int(sys.argv[2]), lb)
+        archive(int(sys.argv[2]), lb, out)
     elif cmd == "package" and len(sys.argv) > 2:
-        out = sys.argv[sys.argv.index("--from") + 1] if "--from" in sys.argv else None
-        package(sys.argv[2], ROOT / out if out else OUTPUT)
+        package(sys.argv[2], out)
     else:
         sys.exit(__doc__)

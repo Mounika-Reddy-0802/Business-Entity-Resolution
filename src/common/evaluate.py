@@ -81,7 +81,8 @@ def log_run(tag, change, metrics, member=None):
     change_txt = change + (" (synthetic)" if rec["synthetic_data"] else "")
     row = [time.strftime("%H:%M"), who, rec["commit"], change_txt, fmt("block_recall"),
            fmt("cands_per_s1"), fmt("f05"), fmt("f05_US"), fmt("f05_India"), fmt("cross_country"),
-           "no", ""]
+           "yes" if metrics.get("uploaded") else "no",
+           "" if metrics.get("lb") is None else f"{metrics['lb']:.4f}"]
     with open(ROOT / "benchmarks" / "experiments.md", "a", encoding="utf-8") as f:
         f.write("| " + " | ".join(row) + " |\n")
     return path

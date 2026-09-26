@@ -46,3 +46,5 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | 00:34 | krishna-2-005 | 00b5e54 | add address-pair key kaa (same address, any name), cap 20 by cap ranker | 0.9595 | 19.8520 |  |  |  |  | no |  |
 | 01:51 | lahari-66 | 2a10fcd | decision rules 1-7 tuned on oof, kept if val f0.5 rises | 0.9589 | 19.8467 | 0.9655 | 0.9757 | 0.9506 |  | no |  |
 | 02:58 | lahari-66 | 6e33511+ | decision rules 1-7 tuned on oof, kept if val f0.5 rises | 0.9589 | 19.8467 | 0.9656 | 0.9757 | 0.9508 |  | no |  |
+| 05:56 | lahari-66 | d038969+ | block limits kt/ka/kaa 60 -> 100 | 0.9632 | 19.9074 |  |  |  |  | no |  |
+| 07:36 | lahari-66 | 3a3be4f | uploaded submission 1 = data/submissions/sub2 (model at 2a10fcd: address-pair blocking, val 0.9655) |  |  |  |  |  |  | yes | 0.9550 |
