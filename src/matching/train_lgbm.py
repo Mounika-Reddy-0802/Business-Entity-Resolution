@@ -12,11 +12,12 @@ import sys
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
+from rapidfuzz import fuzz, process
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import GroupKFold
 
 from ..common.io_utils import DATA, ROOT
-from .features import load_features, parts
+from .features import SIBLING_TEXT, load_features, parts
 from .ranking import second_largest
 
 META = ["s1_id", "cand_id", "side", "label"]
@@ -26,9 +27,9 @@ PARAMS = {"objective": "binary", "learning_rate": 0.1, "num_leaves": 63, "min_ch
           "num_threads": 0}
 # removed after the cross-country check (benchmarks/experiments.md): dropping lifted both directions
 DROPPED = ["is_s3"]
-# second model on stage-1 score context: off on the organiser data, where training uses a sample of
-# S1 entities and the context of the sample would be weaker than the full-table context at test
-STAGE2 = False
+# second model on stage-1 score context within each S1 entity and sibling similarity (score_context)
+STAGE2 = True
+ANCHORS, ANCHOR_MIN = 3, 0.3
 MAX_ROUNDS = 4000
 FOLDS = 5
 MODELS = ROOT / "models"
@@ -40,7 +41,8 @@ def params(**overrides):
 
 
 def feature_cols(df, drop=()):
-    return [c for c in df.columns if c not in META and c not in drop]
+    """Model inputs: every column except ids, labels, dropped features and candidate texts."""
+    return [c for c in df.columns if c not in META and c not in drop and c not in SIBLING_TEXT]
 
 
 def train_rows(full):
@@ -63,20 +65,46 @@ def cross_validate(df, cols, prm):
 
 
 def score_context(df, p):
-    """Stage-2 features from stage-1 scores: how a pair's p compares with the other candidates of
-    its S1 entity and with the other S1 entities that list the same S2/S3 record."""
-    ctx = pd.DataFrame({"s1_id": df.s1_id.values, "cand_id": df.cand_id.values, "p1": p})
-    g1, g2 = ctx.groupby("s1_id").p1, ctx.groupby("cand_id").p1
-    best1, sec1 = g1.transform("max"), second_largest(ctx.p1, ctx.s1_id)
-    best2, sec2 = g2.transform("max"), second_largest(ctx.p1, ctx.cand_id)
-    other = np.where(ctx.p1 >= best2, sec2, best2)
-    return pd.DataFrame({
-        "p1": ctx.p1, "p1_rank_s1": g1.rank(ascending=False, method="min"),
-        "p1_gap_s1": best1 - ctx.p1, "p1_margin_s1": np.where(ctx.p1 >= best1, ctx.p1 - sec1, ctx.p1 - best1),
-        "p1_sum_s1": g1.transform("sum"), "p1_n_above_half_s1": (ctx.p1 >= 0.5).groupby(ctx.s1_id).transform("sum"),
-        "p1_other_s1_best": other, "p1_margin_cand": ctx.p1 - other,
-        "p1_rank_cand": g2.rank(ascending=False, method="min"),
-    }, index=df.index).astype(np.float32)
+    """Stage-2 features from stage-1 scores within each S1 entity (valid on a sample of entities,
+    since an entity's whole candidate list is always featurised together):
+    - rank, gap and margin of the pair's p among the entity's candidates;
+    - sibling similarity: how much the candidate resembles the entity's confident matches
+      (top ANCHORS candidates by p1 with p1 >= ANCHOR_MIN), on name skeleton, address skeleton,
+      address numbers and the raw name. Records of one business resemble each other even when
+      they differ from the S1 record (native script, renamed, moved)."""
+    k = pd.factorize(df.s1_id)[0]
+    p = np.asarray(p, dtype=np.float64)
+    g = pd.Series(p).groupby(k)
+    best, sec = g.transform("max").to_numpy(), second_largest(p, k)
+    out = pd.DataFrame({
+        "p1": p, "p1_rank_s1": g.rank(ascending=False, method="min").to_numpy(),
+        "p1_gap_s1": best - p, "p1_margin_s1": np.where(p >= best, p - sec, p - best),
+        "p1_sum_s1": g.transform("sum").to_numpy(),
+        "p1_n_above_half_s1": pd.Series(p >= 0.5).groupby(k).transform("sum").to_numpy()}, index=df.index)
+    rank = g.rank(ascending=False, method="first").to_numpy()
+    rows = np.arange(len(df))
+    anc = np.flatnonzero((rank <= ANCHORS) & (p >= ANCHOR_MIN))
+    left = pd.DataFrame({"k": k, "row": rows})
+    right = pd.DataFrame({"k": k[anc], "arow": anc, "ap": p[anc]})
+    m = left.merge(right, on="k")
+    m = m[m.row.to_numpy() != m.arow.to_numpy()]
+    i, j = m.row.to_numpy(), m.arow.to_numpy()
+    sim = {}
+    for name, col, scorer in (("sib_name_sim", "sib_name", fuzz.token_set_ratio),
+                              ("sib_addr_sim", "sib_addr", fuzz.token_set_ratio),
+                              ("sib_num_sim", "sib_num", fuzz.token_set_ratio),
+                              ("sib_raw_sim", "sib_raw", fuzz.ratio)):
+        text = df[col].to_numpy(dtype=object)
+        sim[name] = process.cpdist(text[i], text[j], scorer=scorer, workers=-1) / 100.0
+    s_all = pd.DataFrame(sim)
+    s_all["sib_pair_sim"] = (s_all.sib_name_sim + s_all.sib_addr_sim) / 2
+    s_all["sib_weighted"] = s_all.sib_pair_sim * m.ap.to_numpy()
+    s_all["row"] = i
+    agg = s_all.groupby("row").max()
+    agg["sib_n_anchors"] = s_all.groupby("row").size()
+    out = out.join(agg.reindex(rows).set_axis(df.index))
+    out["sib_n_anchors"] = out.sib_n_anchors.fillna(0)
+    return out.astype(np.float32)
 
 
 def fit_stage(df, cols, prm):

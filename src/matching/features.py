@@ -18,6 +18,7 @@ from multiprocessing import Pool
 
 import numpy as np
 import pandas as pd
+import psutil
 import pyarrow as pa
 import pyarrow.compute as pc
 from rapidfuzz import fuzz, process
@@ -32,11 +33,14 @@ from .ranking import second_largest
 SAMPLE_FIT, SAMPLE_VAL = 200_000, 60_000
 PART_S1 = 25_000                  # S1 entities per output part (keeps Python strings per part small)
 CHUNK = 100_000                   # pairs per worker task
-WORKERS = 10
+WORKERS = 6                       # each worker holds its task's strings; 6 leaves RAM headroom
 LANDMARK = {"nr", "opp", "bsd", "bhd"}
 TEXT = ["business_name", "name_clean", "name_core", "legal_suffix", "name_tokens", "name_skel", "name_alt",
         "addr_clean", "addr_numbers", "postal_code", "addr_tokens", "city_guess", "addr_skel"]
 _IDF = {}
+# candidate-side texts kept in the feature parts (not model features; used by train_lgbm stage 2)
+SIBLING_TEXT = {"sib_name": "name_skel", "sib_addr": "addr_skel", "sib_num": "addr_numbers",
+                "sib_raw": "business_name"}
 CODE = ["matching/features.py", "matching/ranking.py", "blocking/block.py", "common/split.py"]
 
 
@@ -57,12 +61,16 @@ def jaccard(a, b):
 
 
 def idf_table(texts):
-    """{token: idf} over an iterable of token strings."""
+    """{token: idf} over an iterable of token strings. Tokens seen once all share the largest idf,
+    so they are left out and that value is stored under the key " " (no token contains a space);
+    lookups of absent tokens fall back to it. Keeps the table small enough to copy to workers."""
     df, n = Counter(), 0
     for t in texts:
         df.update(set(t.split()))
         n += 1
-    return {k: float(np.log((1 + n) / (1 + v))) + 1.0 for k, v in df.items()}
+    table = {k: float(np.log((1 + n) / (1 + v))) + 1.0 for k, v in df.items() if v > 1}
+    table[" "] = float(np.log((1 + n) / 2)) + 1.0
+    return table
 
 
 def idf_overlap(a, b, idf):
@@ -70,7 +78,7 @@ def idf_overlap(a, b, idf):
     wj = np.zeros(len(a), dtype=np.float32)
     cos = np.zeros(len(a), dtype=np.float32)
     rare = np.zeros(len(a), dtype=np.float32)
-    top = max(idf.values(), default=1.0)
+    top = idf.get(" ", 1.0)
     for i, (x, y) in enumerate(zip(a, b)):
         sx, sy = set(x.split()), set(y.split())
         w = lambda t: idf.get(t, top)
@@ -280,8 +288,11 @@ def build(split):
                              columns=["s1_id", "cand_id"]).assign(label=1)
     out = DATA / "features" / split
     out.mkdir(parents=True, exist_ok=True)
-    for old in out.glob("part_*.parquet"):
-        old.unlink()
+    resume = os.environ.get("RESUME") == "1"   # keep parts written by an interrupted run
+    if not resume:
+        for old in out.glob("part_*.parquet"):
+            old.unlink()
+    rss = lambda: psutil.Process().memory_info().rss / 1e9
     total = 0
     for ci, cname in enumerate(names):
         sub = cands[ccode == ci]
@@ -302,12 +313,17 @@ def build(split):
         ids = base.s1_id.unique()
         with Pool(WORKERS, initializer=_init, initargs=(idf,)) as pool:
             for p, start in enumerate(range(0, len(ids), PART_S1)):
+                path = out / f"part_{ci}{p:03d}.parquet"
+                if resume and path.exists():
+                    continue
                 part = base[base.s1_id.isin(ids[start:start + PART_S1])].reset_index(drop=True)
                 A, B = s1.loc[part.s1_id].astype(object), other.loc[part.cand_id].astype(object)
                 tasks = [(A.iloc[i:i + CHUNK], B.iloc[i:i + CHUNK]) for i in range(0, len(part), CHUNK)]
                 feats = pd.concat(pool.map(_chunk, tasks), ignore_index=True)
-                pd.concat([part, feats], axis=1).to_parquet(out / f"part_{ci}{p:03d}.parquet", index=False)
-                print(f"  {split} {cname} part {p}: {len(part):,} pairs", flush=True)
+                for col, src in SIBLING_TEXT.items():   # candidate texts for stage-2 sibling features
+                    feats[col] = B[src].to_numpy()
+                pd.concat([part, feats], axis=1).to_parquet(path, index=False)
+                print(f"  {split} {cname} part {p}: {len(part):,} pairs, rss {rss():.1f} GB", flush=True)
         total += len(base)
         del base, s1, other
     return total

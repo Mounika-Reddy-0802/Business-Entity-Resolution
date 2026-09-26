@@ -64,3 +64,36 @@ def test_evaluator_matches_reference_for_every_rule():
                 {"t_s2": 0.3, "t_s3": 0.3, "t_single": 0.6}):
         c = {**BASE, **cfg}
         assert abs(ev.f05(c) - fast_f05(apply(SCORES, c), truth_frame(truth), list(truth))) < 1e-12
+
+
+def test_pruned_idf_gives_the_same_overlap_features():
+    import numpy as np
+    from collections import Counter
+    from src.matching.features import idf_overlap, idf_table
+    texts = ["a b c", "a b", "a d", "e", "a b f"]
+    df = Counter(t for x in texts for t in set(x.split()))
+    full = {k: float(np.log((1 + len(texts)) / (1 + v))) + 1.0 for k, v in df.items()}
+    full[" "] = max(full.values())
+    pruned = idf_table(texts)
+    assert len(pruned) < len(full)
+    x, y = ["a c", "d e", "b"], ["a c f", "d", "q"]
+    for got, want in zip(idf_overlap(x, y, pruned), idf_overlap(x, y, full)):
+        assert np.allclose(got, want)
+
+
+def test_sibling_context_scores_similarity_to_confident_matches():
+    import numpy as np
+    from src.matching.train_lgbm import score_context
+    df = pd.DataFrame({
+        "s1_id": ["A", "A", "A", "A", "B"],
+        "cand_id": ["S2-1", "S3-1", "S2-2", "S3-2", "S2-9"],
+        "sib_name": ["rj nvstmnts", "rj nvstmnts", "rj nvstmnts", "blu hpns", "x"],
+        "sib_addr": ["kdr nr", "kdr nr", "kdr nr", "mn st", "y"],
+        "sib_num": ["12", "12", "12", "9", "1"],
+        "sib_raw": ["ராஜ் இன்வெஸ்ட்", "Raj Investments", "ராஜ் இன்வெஸ்ட்", "Blue Hypnosis", "X"]})
+    ctx = score_context(df, [0.95, 0.9, 0.2, 0.1, 0.8])
+    # the low-scored native-script record resembles the confident matches; the stranger does not
+    assert ctx.sib_raw_sim[2] == 1.0 and ctx.sib_pair_sim[2] == 1.0
+    assert ctx.sib_pair_sim[3] < 0.5
+    assert ctx.sib_n_anchors[4] == 0 and np.isnan(ctx.sib_name_sim[4])   # its only candidate is itself
+    assert ctx.p1_rank_s1.tolist()[:4] == [1, 2, 3, 4]
