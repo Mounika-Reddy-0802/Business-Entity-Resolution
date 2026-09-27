@@ -150,6 +150,64 @@ def script_share(names):
     return out
 
 
+# legal forms grouped by kind: sources rewrite "Private Limited" as "Pvt Ltd" or drop words, but a
+# different kind (LLP vs Ltd, PLLC vs Co) marks a different business
+SUFFIX_FAMILY = {"pvt": "ltd", "ltd": "ltd", "plc": "ltd", "pty": "ltd", "opc": "ltd", "llp": "llp",
+                 "lp": "llp", "llc": "llc", "inc": "corp", "corp": "corp", "co": "co", "pc": "pc",
+                 "pa": "pc", "sarl": "sarl", "sas": "sas", "sa": "sa", "eurl": "eurl", "sci": "sci",
+                 "snc": "snc", "gmbh": "gmbh", "ag": "ag", "bv": "bv", "nv": "nv", "srl": "srl",
+                 "spa": "spa"}
+
+
+def suffix_family_conflict(a, b):
+    """1 when both names carry a legal form and the kinds are disjoint."""
+    out = np.zeros(len(a), dtype=np.float32)
+    for i, (x, y) in enumerate(zip(a, b)):
+        fx = {SUFFIX_FAMILY.get(t, t) for t in x.split()}
+        fy = {SUFFIX_FAMILY.get(t, t) for t in y.split()}
+        if fx and fy and not fx & fy:
+            out[i] = 1.0
+    return out
+
+
+def number_substitution(a, b):
+    """(share of the shorter side's numbers found exactly on the other side, 1 if some number was
+    substituted rather than dropped: after removing exact counterparts, a leftover number on one
+    side has a same-length leftover on the other side differing in one or two digits). Dropped or
+    added digits are source noise; a changed digit marks a neighbouring unit or building."""
+    exact = np.zeros(len(a), dtype=np.float32)
+    sub = np.zeros(len(a), dtype=np.float32)
+    for i, (x, y) in enumerate(zip(a, b)):
+        nx, ny = x.split(), y.split()
+        if not nx or not ny:
+            continue
+        cx, cy = Counter(nx), Counter(ny)
+        exact[i] = sum((cx & cy).values()) / min(len(nx), len(ny))
+        lx, ly = cx - cy, cy - cx
+        if any(len(u) == len(v) and 0 < sum(c != d for c, d in zip(u, v)) <= 2 for u in lx for v in ly):
+            sub[i] = 1.0
+    return exact, sub
+
+
+# words the sources append to names (seen in matched groups): not evidence of a different business
+FILLER = {"services", "service", "center", "centre", "partners", "group", "mr", "shri", "sri", "smt"}
+
+
+def word_swap(a, b):
+    """(number of words on the S1 side replaced by a dissimilar word on the other side, number of
+    words only the other side has). Sources add filler words or misspell words; replacing one word
+    by a different one ("Gdb Logistics" / "Gdb Power") marks a different business."""
+    swap = np.zeros(len(a), dtype=np.float32)
+    extra = np.zeros(len(a), dtype=np.float32)
+    for i, (x, y) in enumerate(zip(a, b)):
+        sx, sy = set(x.split()) - FILLER, set(y.split()) - FILLER
+        ux, uy = sx - sy, sy - sx
+        if ux and uy:
+            swap[i] = sum(max(fuzz.ratio(u, v) for v in uy) < 60 for u in ux)
+        extra[i] = len(uy) if not ux else 0
+    return swap, extra
+
+
 def tokens_in_glued(names, glued):
     """Share of a name's words (3+ letters) found inside the other name written without spaces:
     "dass priya" is fully inside "priyadass" (domain-style and concatenated names)."""
@@ -242,6 +300,10 @@ def string_features(A, B):
     f["name_nospace_ratio"] = sim(ns1, ns2, fuzz.ratio)                      # "priya dass" vs "priyadass"
     f["name_nospace_partial"] = sim(ns1, ns2, fuzz.partial_ratio)
     f["name_glued"] = np.maximum(tokens_in_glued(nc1, ns2), tokens_in_glued(nc2, ns1))
+    f["suffix_family_conflict"] = suffix_family_conflict(A.legal_suffix.to_numpy(), B.legal_suffix.to_numpy())
+    f["num_exact_share"], f["num_substituted"] = number_substitution(A.addr_numbers.to_numpy(),
+                                                                     B.addr_numbers.to_numpy())
+    f["name_word_swap"], f["name_extra_words"] = word_swap(A.name_tokens.to_numpy(), B.name_tokens.to_numpy())
     f["name2_in_addr1"] = token_in(B.name_tokens, A.addr_clean)
     return pd.DataFrame(f)
 
