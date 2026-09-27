@@ -150,6 +150,31 @@ def script_share(names):
     return out
 
 
+def tokens_in_glued(names, glued):
+    """Share of a name's words (3+ letters) found inside the other name written without spaces:
+    "dass priya" is fully inside "priyadass" (domain-style and concatenated names)."""
+    out = np.zeros(len(names), dtype=np.float32)
+    for i, (x, g) in enumerate(zip(names, glued)):
+        words = [w for w in x.split() if len(w) >= 3]
+        if words and g:
+            out[i] = sum(w in g for w in words) / len(words)
+    return out
+
+
+def number_contained(a, b):
+    """Share of the shorter side's address numbers that appear in, or are a digit-dropped part of,
+    a number on the other side (house numbers lose or gain a digit between sources)."""
+    out = np.zeros(len(a), dtype=np.float32)
+    for i, (x, y) in enumerate(zip(a, b)):
+        nx, ny = x.split(), y.split()
+        if not nx or not ny:
+            continue
+        short, long_ = (nx, ny) if len(nx) <= len(ny) else (ny, nx)
+        hit = sum(any(u == v or (len(u) >= 2 and (u in v or v in u)) for v in long_) for u in short)
+        out[i] = hit / len(short)
+    return out
+
+
 def length_ratio(a, b):
     la = np.fromiter((len(x) for x in a), dtype=np.float32, count=len(a))
     lb = np.fromiter((len(x) for x in b), dtype=np.float32, count=len(b))
@@ -210,6 +235,13 @@ def string_features(A, B):
     f["addr_empty_1"] = (A.addr_clean == "").to_numpy(dtype=np.float32)
     f["addr_empty_2"] = (B.addr_clean == "").to_numpy(dtype=np.float32)
     f["name1_in_addr2"] = token_in(A.name_tokens, B.addr_clean)
+    f["house_ratio"] = sim(h1.to_numpy(), h2.to_numpy(), fuzz.ratio)          # 12573 vs 2573: 0.89
+    f["num_contained"] = number_contained(A.addr_numbers.to_numpy(), B.addr_numbers.to_numpy())
+    ns1 = np.array([x.replace(" ", "") for x in nc1], dtype=object)
+    ns2 = np.array([x.replace(" ", "") for x in nc2], dtype=object)
+    f["name_nospace_ratio"] = sim(ns1, ns2, fuzz.ratio)                      # "priya dass" vs "priyadass"
+    f["name_nospace_partial"] = sim(ns1, ns2, fuzz.partial_ratio)
+    f["name_glued"] = np.maximum(tokens_in_glued(nc1, ns2), tokens_in_glued(nc2, ns1))
     f["name2_in_addr1"] = token_in(B.name_tokens, A.addr_clean)
     return pd.DataFrame(f)
 
@@ -257,6 +289,29 @@ def train_sample():
     fit = rng.choice(s1[~is_val], min(SAMPLE_FIT, (~is_val).sum()), replace=False)
     val = rng.choice(s1[is_val], min(SAMPLE_VAL, is_val.sum()), replace=False)
     return {**{s: "fit" for s in fit}, **{s: "val" for s in val}}
+
+
+def frequency_tables(s1, other):
+    """How ambiguous a record's name and address are within its country, as log counts per record
+    id: how many S1 entities share the S1 record's name skeleton / address key, and how many share
+    the candidate's. A record without an address whose name no other S1 entity has is almost
+    surely a match; an identical address shared by one S1 entity carries a renamed record."""
+    def key_addr(df):
+        first = df.addr_numbers.str.split(" ").str[0].fillna("")
+        return first + "|" + df.addr_skel.astype(str)
+    s1_name, s1_addr = s1.name_skel.astype(str), key_addr(s1)
+    ot_name, ot_addr = other.name_skel.astype(str), key_addr(other)
+    n_name, n_addr = s1_name.value_counts(), s1_addr.value_counts()
+    o_name = ot_name.value_counts()
+    log = lambda x: np.log1p(x.fillna(0).astype(np.float64))
+    empty_addr = lambda k: k.str.endswith("|")          # no numbers and no address words
+    return {
+        "s1_name_freq": (log(s1_name.map(n_name)), "s1_id"),
+        "s1_addr_freq": (log(s1_addr.map(n_addr)).where(~empty_addr(s1_addr)), "s1_id"),
+        "cand_name_freq_s1": (log(ot_name.map(n_name)), "cand_id"),
+        "cand_name_freq_other": (log(ot_name.map(o_name)), "cand_id"),
+        "cand_addr_freq_s1": (log(ot_addr.map(n_addr)).where(~empty_addr(ot_addr)), "cand_id"),
+    }
 
 
 def load_country(split, country):
@@ -310,6 +365,7 @@ def build(split):
         s1, other = load_country(split, cname)
         idf = {"name": idf_table(pd.concat([s1.name_skel, other.name_skel])),
                "addr": idf_table(pd.concat([s1.addr_skel, other.addr_skel]))}
+        freq = frequency_tables(s1, other)
         ids = base.s1_id.unique()
         with Pool(WORKERS, initializer=_init, initargs=(idf,)) as pool:
             for p, start in enumerate(range(0, len(ids), PART_S1)):
@@ -320,6 +376,8 @@ def build(split):
                 A, B = s1.loc[part.s1_id].astype(object), other.loc[part.cand_id].astype(object)
                 tasks = [(A.iloc[i:i + CHUNK], B.iloc[i:i + CHUNK]) for i in range(0, len(part), CHUNK)]
                 feats = pd.concat(pool.map(_chunk, tasks), ignore_index=True)
+                for col, (table, ids) in freq.items():
+                    feats[col] = table.reindex(part[ids].to_numpy()).to_numpy(np.float32)
                 for col, src in SIBLING_TEXT.items():   # candidate texts for stage-2 sibling features
                     feats[col] = B[src].to_numpy()
                 pd.concat([part, feats], axis=1).to_parquet(path, index=False)
