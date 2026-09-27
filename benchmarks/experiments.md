@@ -50,3 +50,4 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | 07:36 | lahari-66 | 3a3be4f | uploaded submission 1 = data/submissions/sub2 (model at 2a10fcd: address-pair blocking, val 0.9655) |  |  |  |  |  |  | yes | 0.9550 |
 | 13:25 | Mounika-Reddy-0802 | 9443c33 | decision rules 1-7 tuned on oof, kept if val f0.5 rises | 0.9627 | 19.9044 | 0.9699 | 0.9780 | 0.9578 |  | no |  |
 | 16:42 | Mounika-Reddy-0802 | 47fa0bc | decision rules 1-7 tuned on oof, kept if val f0.5 rises | 0.9627 | 19.9044 | 0.9731 | 0.9803 | 0.9625 |  | no |  |
+| 18:13 | Rayyan-Mohammed | 0231b09 | uploaded submission 2 (commit 0231b09) |  |  |  |  |  |  | yes | 0.9590 |
