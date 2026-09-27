@@ -51,3 +51,4 @@ changes that land in the commit adding the row. `(synthetic)` rows ran on the st
 | 13:25 | Mounika-Reddy-0802 | 9443c33 | decision rules 1-7 tuned on oof, kept if val f0.5 rises | 0.9627 | 19.9044 | 0.9699 | 0.9780 | 0.9578 |  | no |  |
 | 16:42 | Mounika-Reddy-0802 | 47fa0bc | decision rules 1-7 tuned on oof, kept if val f0.5 rises | 0.9627 | 19.9044 | 0.9731 | 0.9803 | 0.9625 |  | no |  |
 | 18:13 | Rayyan-Mohammed | d2b9899 | uploaded submission 2 = data/submissions/sub5 (stage-2 sibling model, val 0.9699) |  |  |  |  |  |  | yes | 0.9590 |
+| 18:44 | Rayyan-Mohammed | 16e5c00 | uploaded submission 3 (commit 16e5c00) |  |  |  |  |  |  | yes | 0.9653 |
