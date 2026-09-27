@@ -438,8 +438,8 @@ def build(split):
                 A, B = s1.loc[part.s1_id].astype(object), other.loc[part.cand_id].astype(object)
                 tasks = [(A.iloc[i:i + CHUNK], B.iloc[i:i + CHUNK]) for i in range(0, len(part), CHUNK)]
                 feats = pd.concat(pool.map(_chunk, tasks), ignore_index=True)
-                for col, (table, ids) in freq.items():
-                    feats[col] = table.reindex(part[ids].to_numpy()).to_numpy(np.float32)
+                for col, (table, id_col) in freq.items():
+                    feats[col] = table.reindex(part[id_col].to_numpy()).to_numpy(np.float32)
                 for col, src in SIBLING_TEXT.items():   # candidate texts for stage-2 sibling features
                     feats[col] = B[src].to_numpy()
                 pd.concat([part, feats], axis=1).to_parquet(path, index=False)
