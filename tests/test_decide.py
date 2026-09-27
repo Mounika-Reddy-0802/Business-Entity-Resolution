@@ -97,3 +97,17 @@ def test_sibling_context_scores_similarity_to_confident_matches():
     assert ctx.sib_pair_sim[3] < 0.5
     assert ctx.sib_n_anchors[4] == 0 and np.isnan(ctx.sib_name_sim[4])   # its only candidate is itself
     assert ctx.p1_rank_s1.tolist()[:4] == [1, 2, 3, 4]
+
+
+def test_frequency_tables_on_arrow_strings():
+    import numpy as np
+    import pyarrow as pa
+    from src.matching.features import frequency_tables
+    dt = pd.ArrowDtype(pa.string())
+    s1 = pd.DataFrame({"name_skel": ["bl hpns", "bl hpns", "jdth rd"], "addr_numbers": ["506 7", "", ""],
+                       "addr_skel": ["bn st", "", "x"]}, index=["S1-1", "S1-2", "S1-3"]).astype(dt)
+    ot = pd.DataFrame({"name_skel": ["jdth rd", "bl hpns"], "addr_numbers": ["", "506"],
+                       "addr_skel": ["", "bn st"]}, index=["S2-1", "S3-1"]).astype(dt)
+    t = {k: np.expm1(v[0]) for k, v in frequency_tables(s1, ot).items()}
+    assert np.isclose(t["cand_name_freq_s1"]["S2-1"], 1) and np.isclose(t["cand_name_freq_s1"]["S3-1"], 2)
+    assert np.isnan(t["cand_addr_freq_s1"]["S2-1"]) and np.isclose(t["s1_addr_freq"]["S1-1"], 1)

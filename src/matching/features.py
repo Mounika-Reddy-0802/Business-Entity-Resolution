@@ -359,7 +359,7 @@ def frequency_tables(s1, other):
     the candidate's. A record without an address whose name no other S1 entity has is almost
     surely a match; an identical address shared by one S1 entity carries a renamed record."""
     def key_addr(df):
-        first = df.addr_numbers.str.split(" ").str[0].fillna("")
+        first = df.addr_numbers.str.extract(r"^(?P<n>\S*)", expand=False).fillna("").astype(str)
         return first + "|" + df.addr_skel.astype(str)
     s1_name, s1_addr = s1.name_skel.astype(str), key_addr(s1)
     ot_name, ot_addr = other.name_skel.astype(str), key_addr(other)
