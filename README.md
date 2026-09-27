@@ -24,7 +24,7 @@ features ~45 min, training ~20 min). Stages cache their outputs, so reruns skip 
 | normalisation: transliteration, skeleton, junk/suffix clean-up | `src/blocking/normalise.py` | `data/normalised/` |
 | blocking: name+location hash keys, learned cap ranker, top 20 per S1 | `src/blocking/block.py` | `data/candidates/` |
 | 65+ pair features incl. competition features, per country, in parts | `src/matching/features.py` | `data/features/` |
-| LightGBM, 5-fold GroupKFold by S1 entity on a 200k-entity sample | `src/matching/train_lgbm.py` | `models/`, `data/scores/` |
+| two-stage LightGBM (stage 2: sibling similarity), 5-fold GroupKFold by S1 entity, 200k-entity sample | `src/matching/train_lgbm.py` | `models/`, `data/scores/` |
 | decision rules tuned on OOF, accepted on validation; one-to-one | `src/matching/decide.py` | `models/decision.json`, `output/` |
 | organiser validator, local checks, per-country sanity report | `utils/`, `src/common/check_submission.py`, `src/matching/sanity.py` | `benchmarks/raw/` |
 
@@ -36,11 +36,12 @@ src.matching.stability` (seed spread), `python -m src.common.release archive <n>
 
 Every number is a row in `benchmarks/experiments.md` with its json in `benchmarks/raw/`.
 
-| version | blocking recall @20 | val F0.5 | US | India |
+| version | change | blocking recall @20 | val F0.5 | leaderboard |
 |---|---|---|---|---|
-| name-pair keys + hand-scored cap (v2) | 0.869 | — | — | — |
-| + learned cap ranker, model, threshold 0.70, one-to-one (sub 1) | 0.941 | 0.9574 | 0.9710 | 0.9374 |
-| + address-pair key (sub 2) | 0.960 | **0.9655** | 0.9757 | 0.9506 |
+| sub 1 | name-pair keys, learned cap ranker, LightGBM, threshold, one-to-one | 0.941 | 0.9574 | — |
+| sub 2 | + address-pair blocking key | 0.960 | 0.9655 | 0.955 |
+| sub 5 | + looser block limits, stage-2 sibling model | 0.963 | 0.9699 | 0.959 |
+| **sub 6** | + decoy features (legal family, substituted numbers, swapped words) and name/address frequency | 0.963 | **0.9731** | — |
 
 Models: LightGBM (MIT). No external data, lookups or pretrained models are used. An optional
 multilingual embedding stage (`src/neural/embeddings.py`, Apache-2.0 MiniLM) exists but is off.

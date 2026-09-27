@@ -31,7 +31,8 @@ from ..common.split import load_split
 from .ranking import second_largest
 
 SAMPLE_FIT, SAMPLE_VAL = 200_000, 60_000
-SAMPLE_FIT_EXTRA = 200_000        # added fit entities (separate random stream; validation unchanged)
+SAMPLE_FIT_EXTRA = 0              # extra fit entities (separate stream, validation unchanged); 400k
+                                  # did not fit in 16 GB RAM, so the submitted model uses 200k
 PART_S1 = 25_000                  # S1 entities per output part (keeps Python strings per part small)
 CHUNK = 100_000                   # pairs per worker task
 WORKERS = 6                       # each worker holds its task's strings; 6 leaves RAM headroom
@@ -404,6 +405,8 @@ def build(split):
     names, codes = np.unique(s1c.country.to_numpy(dtype=object), return_inverse=True)
     pos = pc.index_in(pa.array(cands.s1_id.array), value_set=pa.array(s1c.entity_id.to_numpy(dtype=object)))
     ccode = codes.astype(np.int16)[pos.to_numpy(zero_copy_only=False)]   # C++ lookup, no Python strings
+    rss = lambda: psutil.Process().memory_info().rss / 1e9
+    print(f"  candidates loaded, rss {rss():.1f} GB", flush=True)
     side = train_sample() if split == "train" else None
     truth = None
     if side is not None:
@@ -415,7 +418,6 @@ def build(split):
     if not resume:
         for old in out.glob("part_*.parquet"):
             old.unlink()
-    rss = lambda: psutil.Process().memory_info().rss / 1e9
     total = 0
     for ci, cname in enumerate(names):
         sub = cands[ccode == ci]
@@ -423,13 +425,16 @@ def build(split):
             listed = sub.cand_id[sub.s1_id.isin(side.keys())].unique()
             sub = sub[sub.cand_id.isin(listed)]
         sub = sub.reset_index(drop=True)
+        print(f"  {cname}: {len(sub):,} rows for competition, rss {rss():.1f} GB", flush=True)
         base = pd.concat([sub, competition(sub, ["cheap_score", "name_sim"])], axis=1)
         del sub
+        print(f"  {cname}: competition done, rss {rss():.1f} GB", flush=True)
         if side is not None:
             base = base[base.s1_id.isin(side.keys())].reset_index(drop=True)
             base["side"] = base.s1_id.map(side)
             base = base.merge(truth, on=["s1_id", "cand_id"], how="left")
             base["label"] = base.label.fillna(0).astype(np.int8)
+        print(f"  {cname}: labels joined ({len(base):,} rows), rss {rss():.1f} GB", flush=True)
         s1, other = load_country(split, cname)
         idf = {"name": idf_table(pd.concat([s1.name_skel, other.name_skel])),
                "addr": idf_table(pd.concat([s1.addr_skel, other.addr_skel]))}
