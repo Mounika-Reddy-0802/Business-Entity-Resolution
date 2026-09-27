@@ -1,7 +1,7 @@
 # ML Challenge 2026: Business Entity Resolution Solution Template
 
-**Team Name:** [Your Team Name]
-**Team Members:** Krishna (krishna-2-005), Lahari (lahari-66), Mounika (Mounika-Reddy-0802), Rayyan (Rayyan-Mohammed)
+**Team Name:** Gradient Descenters
+**Team Members:** Shery Mounika Reddy, M Lahari, MD Rayyan, K Sai Krishna Reddy (NMIMS Hyderabad)
 **Submission Date:** 27 September 2026
 
 ---
@@ -111,8 +111,8 @@ because the training truth is strictly one-to-one.
 
 ## 5. Results & Error Analysis
 
-- **F_0.5 Score (macro):** 0.9731 on 60,000 held-out training entities (leaderboard: 0.9655
-  version 0.955, 0.9699 version 0.959). Seed-to-seed spread of the model is ~0.001.
+- **F_0.5 Score (macro):** 0.9731 on 60,000 held-out training entities; public leaderboard 0.9653
+  (earlier versions: 0.9655 → 0.955, 0.9699 → 0.959). Seed-to-seed spread of the model is ~0.001.
 - **Common false positives (wrong merges):** neighbouring businesses with near-identical names on
   the same street ("Gauthier Culture", 498 Town Line Rd vs "Gauthier Couture", 519 Town Line Rd);
   records with an empty address whose name is shared by several entities.
@@ -125,7 +125,7 @@ because the training truth is strictly one-to-one.
 | name-pair blocking (recall 0.894), 64 features, threshold 0.70, one-to-one | 0.9574 |
 | + address-pair key and learned cap ranker (recall 0.960) | 0.9655 (LB 0.955) |
 | + looser block limits (recall 0.963) + stage-2 sibling model | 0.9699 (LB 0.959) |
-| + decoy and ambiguity features | 0.9731 |
+| + decoy and ambiguity features (final) | 0.9731 (LB 0.9653) |
 
 ---
 

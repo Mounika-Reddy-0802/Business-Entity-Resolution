@@ -41,7 +41,7 @@ Every number is a row in `benchmarks/experiments.md` with its json in `benchmark
 | sub 1 | name-pair keys, learned cap ranker, LightGBM, threshold, one-to-one | 0.941 | 0.9574 | — |
 | sub 2 | + address-pair blocking key | 0.960 | 0.9655 | 0.955 |
 | sub 5 | + looser block limits, stage-2 sibling model | 0.963 | 0.9699 | 0.959 |
-| **sub 6** | + decoy features (legal family, substituted numbers, swapped words) and name/address frequency | 0.963 | **0.9731** | — |
+| **sub 6** | + decoy features (legal family, substituted numbers, swapped words) and name/address frequency | 0.963 | **0.9731** | 0.9653 |
 
 Models: LightGBM (MIT). No external data, lookups or pretrained models are used. An optional
 multilingual embedding stage (`src/neural/embeddings.py`, Apache-2.0 MiniLM) exists but is off.
