@@ -11,7 +11,7 @@
 A three-stage pipeline: script-aware normalisation, name-plus-location hash blocking with a
 learned candidate ranker, and a LightGBM pair classifier with competition features, followed by a
 precision-first decision layer (threshold, strict one-to-one assignment). On a held-out 20% of
-training entities it reaches macro F0.5 **0.9699** at a blocking recall of
+training entities it reaches macro F0.5 **0.9731** at a blocking recall of
 0.96 with 20 candidates per Source 1 entity. Everything is language-agnostic, so the unseen
 country (France) runs through the same code.
 
@@ -74,7 +74,7 @@ removed, repeats collapsed): "Raj Investments" and "ராஜ் இன்வெ
 
 ## 4. Matching Model
 
-**Features used (65 in the submitted model):**
+**Features used (96 in the submitted two-stage model):**
 - Name features: Jaro-Winkler, Levenshtein ratio, token-set/sort, partial ratio on the core
   name; ratio, token-set, partial and Jaccard on the skeleton; best token-set including the DBA
   name; token Jaccard, IDF-weighted Jaccard and cosine, rarest shared token IDF, common prefix,
@@ -84,6 +84,12 @@ removed, repeats collapsed): "Raj Investments" and "ராஜ் இன்வெ
   skeleton; token and IDF Jaccard/cosine, number Jaccard, house-number state and containment,
   postal state, city overlap, length ratio, landmark flag, empty-address flags; name tokens found
   in the other address.
+- Decoy and ambiguity features (added after error analysis; 85% of false merges were
+  near-duplicate records owned by no S1 entity): legal-family conflict (Ltd vs LLP; match rate 0.4%
+  when set vs 19% otherwise), substituted-vs-dropped unit numbers (9/2 vs 9/9: 2% vs 20%),
+  swapped name words excluding source filler words (3% vs 43%), glued/domain names, and log
+  frequency of the name and address among the country's S1 records (a record without an address
+  whose name no other S1 entity has is almost surely its match).
 - Other: blocking key flags; cap-ranker score; **competition features** over the whole candidate
   table (rank, gap and margin of the pair among its S1 entity's candidates; best score of the same
   S2/S3 record with any other S1 entity, margin and rank; candidate counts).
@@ -105,8 +111,8 @@ because the training truth is strictly one-to-one.
 
 ## 5. Results & Error Analysis
 
-- **F_0.5 Score (macro):** 0.9699 on 60,000 held-out training entities (leaderboard for the
-  previous 0.9655 version: 0.955). Seed-to-seed spread of the model is ~0.001.
+- **F_0.5 Score (macro):** 0.9731 on 60,000 held-out training entities (leaderboard: 0.9655
+  version 0.955, 0.9699 version 0.959). Seed-to-seed spread of the model is ~0.001.
 - **Common false positives (wrong merges):** neighbouring businesses with near-identical names on
   the same street ("Gauthier Culture", 498 Town Line Rd vs "Gauthier Couture", 519 Town Line Rd);
   records with an empty address whose name is shared by several entities.
@@ -118,7 +124,8 @@ because the training truth is strictly one-to-one.
 |---|---|
 | name-pair blocking (recall 0.894), 64 features, threshold 0.70, one-to-one | 0.9574 |
 | + address-pair key and learned cap ranker (recall 0.960) | 0.9655 (LB 0.955) |
-| + looser block limits (recall 0.963) + stage-2 sibling model | 0.9699 |
+| + looser block limits (recall 0.963) + stage-2 sibling model | 0.9699 (LB 0.959) |
+| + decoy and ambiguity features | 0.9731 |
 
 ---
 

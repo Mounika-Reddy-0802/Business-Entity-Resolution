@@ -31,6 +31,7 @@ from ..common.split import load_split
 from .ranking import second_largest
 
 SAMPLE_FIT, SAMPLE_VAL = 200_000, 60_000
+SAMPLE_FIT_EXTRA = 200_000        # added fit entities (separate random stream; validation unchanged)
 PART_S1 = 25_000                  # S1 entities per output part (keeps Python strings per part small)
 CHUNK = 100_000                   # pairs per worker task
 WORKERS = 6                       # each worker holds its task's strings; 6 leaves RAM headroom
@@ -348,8 +349,13 @@ def train_sample():
     s1 = load_normalised("train", ["entity_id"])["source1"].entity_id.to_numpy()
     rng = np.random.RandomState(42)
     is_val = pd.Series(s1).isin(val_s1).to_numpy()   # hash lookup; np.isin on objects is quadratic
-    fit = rng.choice(s1[~is_val], min(SAMPLE_FIT, (~is_val).sum()), replace=False)
+    pool = s1[~is_val]
+    fit = rng.choice(pool, min(SAMPLE_FIT, len(pool)), replace=False)
     val = rng.choice(s1[is_val], min(SAMPLE_VAL, is_val.sum()), replace=False)
+    if SAMPLE_FIT_EXTRA:        # more fit entities from a separate stream: fit and val above unchanged
+        rest = pool[~pd.Series(pool).isin(set(fit)).to_numpy()]
+        extra = np.random.RandomState(7).choice(rest, min(SAMPLE_FIT_EXTRA, len(rest)), replace=False)
+        fit = np.concatenate([fit, extra])
     return {**{s: "fit" for s in fit}, **{s: "val" for s in val}}
 
 
