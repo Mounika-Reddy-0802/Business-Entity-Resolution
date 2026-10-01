@@ -1,8 +1,10 @@
 # ML Challenge 2026: Business Entity Resolution Solution Template
 
 **Team Name:** Gradient Descenters
+
 **Team Members:** Shery Mounika Reddy, M Lahari, MD Rayyan, K Sai Krishna Reddy (NMIMS Hyderabad)
-**Submission Date:** 27 September 2026
+
+**Submission Date:** 27 September 2026 (final leaderboard submission); methodology submitted October 2026
 
 ---
 
@@ -11,8 +13,8 @@
 A three-stage pipeline: script-aware normalisation, name-plus-location hash blocking with a
 learned candidate ranker, and a LightGBM pair classifier with competition features, followed by a
 precision-first decision layer (threshold, strict one-to-one assignment). On a held-out 20% of
-training entities it reaches macro F0.5 **0.9731** at a blocking recall of
-0.96 with 20 candidates per Source 1 entity. Everything is language-agnostic, so the unseen
+training entities it reaches macro F0.5 **0.9731** (public leaderboard **0.9653**) at a blocking
+recall of 0.963 with 20 candidates per Source 1 entity. Everything is language-agnostic, so the unseen
 country (France) runs through the same code.
 
 ---
@@ -39,11 +41,14 @@ country (France) runs through the same code.
 
 **Approach Type:** Blocking + learned candidate ranker + gradient-boosted pair classifier +
 decision layer.
+
 **Core Innovation:** (1) a consonant *skeleton* view that makes transliterated and Latin spellings
 meet; (2) name-plus-location blocking keys joined as 64-bit hashes over the full data, with a
-small LightGBM *cap ranker* that keeps the 20 best candidates per entity (recall 0.941 → 0.960 with
-the address-pair key); (3) competition features computed over the whole candidate table, and
-strict one-to-one assignment, exploiting the one-to-one structure of the truth.
+small LightGBM *cap ranker* that keeps the 20 best candidates per entity (capped recall 0.894 →
+0.963); (3) competition features over the whole candidate table, strict one-to-one assignment and
+a second-stage model that compares each candidate with the entity's confident matches, exploiting
+the one-to-one structure of the truth; (4) features that recognise deliberately planted
+near-duplicate records (different legal form, substituted unit number, swapped name word).
 
 ---
 
@@ -60,13 +65,18 @@ removed, repeats collapsed): "Raj Investments" and "ராஜ் இன்வெ
   `kp` pair of name skeleton tokens; `kn` full name skeleton + one address word; `knp` name-token
   pair + one address number; `kt` one name token + one address word (survives a typo in the
   others); `ka` address number + address word; `kaa` pair of address words (same address, any
-  name: native-script and domain-style names). Key values shared by more than 60 (150 for `kp`)
-  S2/S3 records are skipped.
-- **Candidate pairs generated:** 34.35M for test (19.8 per S1 entity), 43.8M for train.
-- **How true matches were not lost:** the union of keys holds 96.1% of true pairs on train. A
-  LightGBM cap ranker on cheap signals (key flags, skeleton/number similarity, empty-address
-  flags), trained on the uncapped pairs of 20k fit-side entities, orders each entity's candidates;
-  keeping the top 20 retains 95.95% (a hand-weighted similarity kept only 86.9% at the same cap).
+  name: native-script and domain-style names). Key values shared by more than a block limit of
+  S2/S3 records are skipped (150 for `kp`, 60 for `kn`/`knp`, 100 for `kt`/`ka`/`kaa`).
+- **Join at scale:** each key kind is exploded to (key hash, record) rows, joined for all 2.2M (train)
+  / 1.7M (test) S1 entities against the whole S2+S3 pool of the same country, and spilled to disk
+  one kind at a time; scoring and capping run in chunks of 125k S1 entities (16 GB laptop).
+- **Candidate pairs generated:** 34.47M for test (19.9 per S1 entity), 43.93M for train.
+- **How true matches were not lost:** the union of keys holds 96.6% of true pairs on train (about
+  245 pairs per entity before capping). A LightGBM cap ranker on cheap signals (key flags,
+  skeleton/name/number similarity, empty-address flags), trained on the uncapped pairs of 20k
+  fit-side entities, orders each entity's candidates; keeping the top 20 retains **96.3%** (a
+  hand-weighted similarity kept only 86.9% at the same cap). Per-key recall: kp 0.55, kn 0.53,
+  knp 0.62, kt 0.75, ka 0.76, kaa 0.72.
   Every key and cap was chosen from measured per-key and per-cap recall
   (`benchmarks/experiments.md`).
 
@@ -75,6 +85,7 @@ removed, repeats collapsed): "Raj Investments" and "ராஜ் இன்வெ
 ## 4. Matching Model
 
 **Features used (96 in the submitted two-stage model):**
+
 - Name features: Jaro-Winkler, Levenshtein ratio, token-set/sort, partial ratio on the core
   name; ratio, token-set, partial and Jaccard on the skeleton; best token-set including the DBA
   name; token Jaccard, IDF-weighted Jaccard and cosine, rarest shared token IDF, common prefix,
@@ -100,7 +111,13 @@ fraction 0.8, early stopping, seed 42), 5-fold GroupKFold by S1 entity on 200k f
 pair's rank/gap/margin within its entity and **sibling similarity**: how much the candidate
 resembles the entity's three most confident matches (name skeleton, address skeleton, numbers,
 raw name), since all records of one business resemble each other even when they differ from the
-S1 record. Stage 2 lifts OOF AUC from 0.99961 to 0.99972.
+S1 record. Out-of-fold AUC: stage 1 0.99976, stage 2 0.99981.
+
+**Validation:** a fixed 20% of Source 1 entities (seed 42, stratified by country and singleton)
+is held out; the model never trains on them, and decision thresholds are tuned on out-of-fold
+scores of the fit side and only accepted if F0.5 on the held-out entities rises (60,000 sampled
+validation entities). No leaderboard feedback was used for tuning.
+
 **Threshold selection method:** every decision rule is tuned on out-of-fold scores for macro F0.5
 and kept only if it raises F0.5 on the held-out validation entities: global threshold (0.725),
 per-source thresholds, relative-to-best rule, per-source caps, singleton guard. One-to-one
@@ -113,12 +130,18 @@ because the training truth is strictly one-to-one.
 
 - **F_0.5 Score (macro):** 0.9731 on 60,000 held-out training entities; public leaderboard 0.9653
   (earlier versions: 0.9655 → 0.955, 0.9699 → 0.959). Seed-to-seed spread of the model is ~0.001.
-- **Common false positives (wrong merges):** neighbouring businesses with near-identical names on
-  the same street ("Gauthier Culture", 498 Town Line Rd vs "Gauthier Couture", 519 Town Line Rd);
-  records with an empty address whose name is shared by several entities.
-- **Common false negatives (missed matches):** candidates never generated (two-thirds of misses):
-  native-script names at addresses shortened to a city, and records with no address; model misses:
-  native-script or domain-style names whose address also changed.
+- **Where the remaining score is lost (validation):** a perfect decision on our candidates would
+  score 0.9866; 3.7% of true matches are never generated by blocking (native-script names at
+  addresses shortened to a city, records without an address). Within the candidates the final model
+  has 953 false merges and 5,274 missed true candidates (from 1,138 and 6,426 before the decoy and
+  ambiguity features).
+- **Common false positives (wrong merges):** 85% are planted near-duplicates owned by no S1 entity:
+  the same business with a different legal form ("Rn Brothers Ltd" vs "Rn Brothers LLP"), a
+  neighbouring unit (Unit 9/2 vs 9/9, Flat 104 vs 125), or one name word replaced ("Gdb Logistics"
+  vs "Gdb Power").
+- **Common false negatives (missed matches):** candidates with an empty address whose name is shared
+  by several businesses; gibberish trade names at an identical address; native-script or
+  domain-style names whose address also changed.
 
 | step | val F0.5 |
 |---|---|
@@ -134,8 +157,11 @@ because the training truth is strictly one-to-one.
 Most of the score comes from candidate generation that respects how this data repeats names
 across businesses (name + location keys) and from exploiting the one-to-one structure (competition
 features, one-to-one assignment). Script-aware normalisation carries the Indian records, and the
-same language-agnostic code handles France, whose predicted matches per entity (3.41) and
-singleton share (5%) mirror the training distribution.
+same language-agnostic code handles France, whose predicted matches per entity (3.30) and
+no-match share (5.8%) mirror the training distribution (3.46, 5.6%). The main lesson: the largest
+gains came from error analysis (which records were missed or wrongly merged, and why), not from
+tuning; the next step would be similarity search over whole records to recover the 3.7% of matches
+that blocking never generates.
 
 ---
 
@@ -148,7 +174,9 @@ checks, release packaging), `src/blocking` (normalise, block), `src/matching` (f
 train_lgbm, decide, sanity, errors, cross_country, tune, stability), `src/neural` (optional
 embeddings, off). Entry point: `bash scripts/run_pipeline.sh` with the organiser data in
 `data/raw/dataset/`; it writes `output/matching_results.tsv` and `output/candidate_pairs.tsv` and
-runs the organiser validator. Models: LightGBM (MIT) only; no external data or services.
+runs the organiser validator. Models: LightGBM (MIT) only; no external data, lookups, APIs or
+pretrained models. Libraries: pandas, pyarrow, numpy, scikit-learn, rapidfuzz, jellyfish,
+Unidecode, LightGBM (versions pinned in `requirements.txt`).
 
 ### B. Additional Results
 
