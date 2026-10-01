@@ -21,7 +21,7 @@ from .evaluate import git_commit, log_run
 from .io_utils import OUTPUT, RAW, ROOT, data_is_synthetic
 
 CODE_DIRS = ("src", "scripts")
-NOT_PACKAGED = {"setup_git.sh"}           # team git tooling, not part of the pipeline
+NOT_PACKAGED = {"setup_git.sh", "make_synthetic_data.py"}   # team tooling, not part of the pipeline
 CODE_FILES = ("README.md", "requirements.txt")
 
 

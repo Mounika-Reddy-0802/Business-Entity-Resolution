@@ -5,10 +5,13 @@ provided name, address and country fields. Scored on macro F0.5 per Source 1 ent
 
 ## Reproduce end to end
 
+Python 3.11, run from this folder (`code/business_entity_resolution/` in the submission zip):
+
 ```bash
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-# organiser files: data/raw/dataset/{train,test}/*.tsv and utils/validate_submission.py
+# put the organiser data here: data/raw/dataset/train/*.tsv and data/raw/dataset/test/*.tsv
+# (optional) organiser validator at utils/validate_submission.py
 bash scripts/run_pipeline.sh
 ```
 

@@ -2,8 +2,9 @@
 # End to end: split -> normalise -> block -> features -> train -> decide -> validate.
 # Data stages (normalise, block, features) are skipped when their outputs are newer than their
 # inputs and every file under src/; FORCE=1 reruns them.
-# Decision rules are tuned on the fit side (validation held out); then, unless FULL=0, the model
-# is retrained on the whole training split before scoring test.
+# Decision rules are tuned on out-of-fold scores of the fit side and accepted on the held-out
+# validation entities; test is scored with the same fit-side model (this produced the submitted
+# output). FULL=1 additionally retrains on the whole training sample before scoring test.
 set -e
 cd "$(dirname "$0")/.."
 if [ -x .venv/bin/python ]; then PY=.venv/bin/python
@@ -18,7 +19,7 @@ else PY="${PYTHON:-python3}"; fi
 "$PY" -m src.matching.train_lgbm
 "$PY" -m src.matching.train_lgbm --predict
 "$PY" -m src.matching.decide sweep
-if [ "${FULL:-1}" = 1 ]; then
+if [ "${FULL:-0}" = 1 ]; then
   "$PY" -m src.matching.train_lgbm --full
   "$PY" -m src.matching.train_lgbm --predict
 fi
